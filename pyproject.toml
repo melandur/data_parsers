@@ -12,6 +12,7 @@ SimpleITK = "^2.1.1"
 loguru = "^0.6.0"
 black = "^22.6.0"
 isort = "^5.10.1"
+nibabel = "^4.0.1"
 
 [tool.poetry.dev-dependencies]
 

@@ -1,5 +1,7 @@
 import os
+import random
 import sys
+import json
 from collections import defaultdict
 
 import pydicom
@@ -19,14 +21,14 @@ class NestedDefaultDict(defaultdict):
 
 class DicomParser:
     def __init__(
-        self,
-        src: str,
-        dst: str,
-        min_number_of_slices: int,
-        file_types: list,
-        search_tags: dict,
-        exclude_tags: list,
-        log_level: str,
+            self,
+            src: str,
+            dst: str,
+            min_number_of_slices: int,
+            file_types: list,
+            search_tags: dict,
+            exclude_tags: list,
+            log_level: str,
     ) -> None:
 
         self.src = src
@@ -43,6 +45,17 @@ class DicomParser:
         logger.add(sys.stderr, level=self.log_level)
         self.scan_folder()
         self.convert_to_nifti()
+
+    def export_meta_data_as_json(self):
+        """Iterate over the whole data and export data as json file"""
+        for root, _, files in os.walk(self.src):
+            print('')
+            for file in files:
+                file_path = os.path.join(root, file)
+                if self.check_file(file_path):
+                    ds = pydicom.filereader.dcmread(file_path)
+                    print(ds)
+                    break
 
     def check_file_type(self, file_name: str) -> bool:
         """True if file ends with defined file type"""
@@ -70,6 +83,7 @@ class DicomParser:
         """Check meta data tags"""
         ds = pydicom.filereader.dcmread(file_path, force=True)
         case_name = ds.get('SOPClassUID')
+        case_name = str(random.randint(0, 1000))
         for modality in self.search_tags:
             if self.check_tags(ds, modality):
                 logger.info(f'found -> {modality} {file_path}')
@@ -95,7 +109,7 @@ class DicomParser:
                 if self.check_file(file_path):
                     self.meta_data_search(file_path)
                     break  # no need to check every file in folder, break out of folder
-        logger.info(f'Path memory -> {self.path_memory}')
+        logger.info(f'Path memory -> {json.dumps(self.path_memory, indent=4)}')
 
     @staticmethod
     def dicom_sequence_reader(file_path: str) -> sitk.Image:
@@ -106,17 +120,18 @@ class DicomParser:
         dicom_names = reader.GetGDCMSeriesFileNames(file_path, series_ids[0])
         reader.SetFileNames(dicom_names)
         img = reader.Execute()
-        img = sitk.Cast(img, sitk.sitkFloat32)
         return img
 
+    @logger.catch()
     def convert_to_nifti(self):
         """Convert path memory to nifti"""
         for case_name in self.path_memory:
             for modality in self.path_memory[case_name]:
                 img = self.dicom_sequence_reader(self.path_memory[case_name][modality])
                 dst_folder = os.path.join(self.dst, case_name)
+                dst_folder = self.dst
                 os.makedirs(dst_folder, exist_ok=True)
-                sitk.WriteImage(img, os.path.join(dst_folder, f'{modality}.nii.gz'))
+                sitk.WriteImage(img, os.path.join(dst_folder, f'{case_name}_{modality}.nii.gz'))
 
 
 if __name__ == '__main__':
@@ -131,11 +146,12 @@ if __name__ == '__main__':
             #     'SequenceName': [['tf']],
             # },
             'flair': {
-                # 'ImageType': [['ORIGINAL'], ['PRIMARY'], ['MOCO']],
-                'SequenceName': [['*fl2d1_v150in']],
+                'ImageType': [['ORIGINAL'], ['PRIMARY'], ['DIS2D']],
+                'SequenceName': ['*tfi2d1_68'],
             }
         },
         exclude_tags=['DICOMDIR'],
-        log_level='DEBUG'
+        log_level='TRACE'
     )
-    dp()
+    # dp()
+    dp.export_meta_data_as_json()
