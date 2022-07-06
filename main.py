@@ -46,15 +46,19 @@ class DicomParser:
         self.scan_folder()
         self.convert_to_nifti()
 
-    def export_meta_data_as_json(self):
+    def export_meta_data_as_json(self, tags=None):
         """Iterate over the whole data and export data as json file"""
         for root, _, files in os.walk(self.src):
-            print('')
             for file in files:
                 file_path = os.path.join(root, file)
                 if self.check_file(file_path):
                     ds = pydicom.filereader.dcmread(file_path)
-                    print(ds)
+                    if tags:
+                        print('')
+                        for tag in tags:
+                            print(ds.get(tag))
+                    else:
+                        print(ds)
                     break
 
     def check_file_type(self, file_name: str) -> bool:
@@ -141,17 +145,24 @@ if __name__ == '__main__':
         min_number_of_slices=10,
         file_types=[''],
         search_tags={
-            # 't1': {
-            #     'ImageType': [['ORIGINAL'], ['PRIMARY'], ['MOCO']],
-            #     'SequenceName': [['tf']],
-            # },
+            #         # 't1': {
+            #         #     'ImageType': [['ORIGINAL'], ['PRIMARY'], ['MOCO']],
+            #         #     'SequenceName': [['tf']],
+            #         # },
             'flair': {
                 'ImageType': [['ORIGINAL'], ['PRIMARY'], ['DIS2D']],
-                'SequenceName': ['*tfi2d1_68'],
+                'Modality': [['MR']],
+                '': [['']],
+                # 'ScanningSequence': [['SE']],
+                # 'SequenceVariant': [['SK']],
+                # 'ScanOptions': [['DB']],
+                'MRAcquisitionType': [['2D']],
+                'SequenceName': [['*tfi2d1_68']],
+
             }
         },
         exclude_tags=['DICOMDIR'],
         log_level='TRACE'
     )
     # dp()
-    dp.export_meta_data_as_json()
+    dp.export_meta_data_as_json(['ImageType', 'Modality', 'SequenceName'])
