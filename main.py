@@ -1,7 +1,6 @@
-import os
-import random
-import sys
 import json
+import os
+import sys
 from collections import defaultdict
 
 import pydicom
@@ -20,17 +19,18 @@ class NestedDefaultDict(defaultdict):
 
 
 class DicomParser:
-    def __init__(
-            self,
-            src: str,
-            dst: str,
-            min_number_of_slices: int,
-            file_types: list,
-            search_tags: dict,
-            exclude_tags: list,
-            log_level: str,
-    ) -> None:
+    """Filter tag based dicom to nifti converter"""
 
+    def __init__(
+        self,
+        src: str,
+        dst: str,
+        min_number_of_slices: int,
+        file_types: list,
+        search_tags: dict,
+        exclude_tags: list,
+        log_level: str,
+    ) -> None:
         self.src = src
         self.dst = dst
         self.min_number_of_slices = min_number_of_slices
@@ -39,24 +39,26 @@ class DicomParser:
         self.exclude_tags = exclude_tags
         self.log_level = log_level
         self.path_memory = NestedDefaultDict()
-
-    def __call__(self) -> None:
         logger.remove()
         logger.add(sys.stderr, level=self.log_level)
+
+    def __call__(self) -> None:
+        logger.info(f'Run: {self.__class__.__name__}')
         self.scan_folder()
+        self.check_path_memory()
         self.convert_to_nifti()
 
-    def export_meta_data_as_json(self, tags=None):
-        """Iterate over the whole data and export data as json file"""
+    def show_certain_meta_data(self, tags=None):
+        """Iterate and visualise meta data for certain tags"""
         for root, _, files in os.walk(self.src):
             for file in files:
                 file_path = os.path.join(root, file)
                 if self.check_file(file_path):
                     ds = pydicom.filereader.dcmread(file_path)
                     if tags:
-                        print('')
+                        print(f'\n{file_path}')
                         for tag in tags:
-                            print(ds.get(tag))
+                            print(f'{tag:<20}{ds.get(tag)}')
                     else:
                         print(ds)
                     break
@@ -73,11 +75,12 @@ class DicomParser:
         count_values = 0
         for key in self.search_tags[modality].keys():
             if ds.get(key):
-                logger.trace(f'Check -> {key} : {ds.get(key)}')
-                values = self.search_tags[modality][key]
-                count_values += len(values)  # sum up multi tag statements
-                for value in values:
-                    if [x for x in value if x in ds.get(key)]:
+                search_values = self.search_tags[modality][key]
+                count_values += len(search_values)  # sum up multi tag statements
+                for value in search_values:
+                    meta_data = ds.get(key)
+                    logger.trace(f'{modality} -> {key} -> {value} : {meta_data}')
+                    if [x for x in value if x in meta_data]:
                         counter += 1
         if counter == count_values and counter != 0:
             return True
@@ -86,11 +89,10 @@ class DicomParser:
     def meta_data_search(self, file_path: str) -> None:
         """Check meta data tags"""
         ds = pydicom.filereader.dcmread(file_path, force=True)
-        case_name = ds.get('SOPClassUID')
-        case_name = str(random.randint(0, 1000))
+        case_name = str(ds.get('PatientName'))
         for modality in self.search_tags:
             if self.check_tags(ds, modality):
-                logger.info(f'found -> {modality} {file_path}')
+                logger.debug(f'found -> {modality} {file_path}')
                 self.path_memory[case_name][modality] = file_path
 
     def check_file(self, file_path: str) -> bool:
@@ -115,6 +117,18 @@ class DicomParser:
                     break  # no need to check every file in folder, break out of folder
         logger.info(f'Path memory -> {json.dumps(self.path_memory, indent=4)}')
 
+    def check_path_memory(self) -> None:
+        """Assures that all sequences for each subject are completed"""
+        count_search_tags = len(self.search_tags)
+        call_once = True
+        for case_name, sequence_names in self.path_memory.items():
+            if count_search_tags != len(sequence_names):
+                if call_once:
+                    call_once = False
+                    logger.warning(f'{"Missing data":<20}{"case_name ":<15}sequence')
+                missing_sequences = set(self.search_tags).difference(set(sequence_names))
+                logger.warning(f'{"":<20}{case_name:<14} {missing_sequences}')
+
     @staticmethod
     def dicom_sequence_reader(file_path: str) -> sitk.Image:
         """Reads data and meta data of dicom sequences"""
@@ -133,36 +147,44 @@ class DicomParser:
             for modality in self.path_memory[case_name]:
                 img = self.dicom_sequence_reader(self.path_memory[case_name][modality])
                 dst_folder = os.path.join(self.dst, case_name)
-                dst_folder = self.dst
                 os.makedirs(dst_folder, exist_ok=True)
                 sitk.WriteImage(img, os.path.join(dst_folder, f'{case_name}_{modality}.nii.gz'))
 
 
 if __name__ == '__main__':
     dp = DicomParser(
-        src='/home/melandur/Data/Myocarditis/M1',
+        src='/home/melandur/Data/Myocarditis/test3/',
         dst='/home/melandur/Downloads/test_me',
-        min_number_of_slices=10,
-        file_types=[''],
+        min_number_of_slices=1,
+        file_types=['.dcm'],
         search_tags={
-            't1': {
-            	'ImageType': [['ORIGINAL'], ['PRIMARY'], ['MOCO']],
-            	'SequenceName': [['tf']],
-            },
-            'flair': {
-                'ImageType': [['ORIGINAL'], ['PRIMARY'], ['DIS2D']],
+            't2_star': {
+                'SeriesDescription': [['T2'], ['STAR']],
+                'ScanningSequence': [['GR']],
                 'Modality': [['MR']],
-                '': [['']],
-                # 'ScanningSequence': [['SE']],
-                # 'SequenceVariant': [['SK']],
-                # 'ScanOptions': [['DB']],
                 'MRAcquisitionType': [['2D']],
-                'SequenceName': [['*tfi2d1_68']],
-
-            }
+            },
+            't2_spair': {
+                'SeriesDescription': [['T2'], ['SPAIR']],
+                'ScanningSequence': [['SE']],
+                'Modality': [['MR']],
+                'MRAcquisitionType': [['2D']],
+            },
         },
         exclude_tags=['DICOMDIR'],
-        log_level='TRACE'
+        log_level='INFO',
     )
     dp()
-    # dp.export_meta_data_as_json(['ImageType', 'Modality', 'SequenceName'])
+
+    # dp.show_certain_meta_data([
+    #     'ImageType',
+    #     'Modality',
+    #     'StudyDescription',
+    #     'SeriesNumber',
+    #     'SeriesDescription',
+    #     'MRAcquisitionType',
+    #     'PatientName',
+    #     'SequenceName',
+    #     'ProtocolName',
+    #
+    # ])
