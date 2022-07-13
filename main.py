@@ -145,10 +145,10 @@ if __name__ == '__main__':
         min_number_of_slices=10,
         file_types=[''],
         search_tags={
-            #         # 't1': {
-            #         #     'ImageType': [['ORIGINAL'], ['PRIMARY'], ['MOCO']],
-            #         #     'SequenceName': [['tf']],
-            #         # },
+            't1': {
+            	'ImageType': [['ORIGINAL'], ['PRIMARY'], ['MOCO']],
+            	'SequenceName': [['tf']],
+            },
             'flair': {
                 'ImageType': [['ORIGINAL'], ['PRIMARY'], ['DIS2D']],
                 'Modality': [['MR']],
@@ -164,5 +164,5 @@ if __name__ == '__main__':
         exclude_tags=['DICOMDIR'],
         log_level='TRACE'
     )
-    # dp()
-    dp.export_meta_data_as_json(['ImageType', 'Modality', 'SequenceName'])
+    dp()
+    # dp.export_meta_data_as_json(['ImageType', 'Modality', 'SequenceName'])
