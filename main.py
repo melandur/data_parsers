@@ -54,7 +54,7 @@ class DicomParser:
             for file in files:
                 file_path = os.path.join(root, file)
                 if self.check_file(file_path):
-                    ds = pydicom.filereader.dcmread(file_path)
+                    ds = pydicom.filereader.dcmread(file_path, force=True)
                     if tags:
                         print(f'\n{file_path}')
                         for tag in tags:
@@ -69,19 +69,21 @@ class DicomParser:
             return True
         return False
 
-    def check_tags(self, ds: pydicom.filereader, modality: str) -> bool:
+    def check_tags(self, ds: pydicom.filereader, modality: str, case_name: str) -> bool:
         """Return true in case one of each values for each key has a match"""
         counter = 0
         count_values = 0
         for key in self.search_tags[modality].keys():
-            if ds.get(key):
+            meta_data = ds.get(key)
+            if meta_data:
                 search_values = self.search_tags[modality][key]
                 count_values += len(search_values)  # sum up multi tag statements
                 for value in search_values:
-                    meta_data = ds.get(key)
                     logger.trace(f'{modality} -> {key} -> {value} : {meta_data}')
                     if [x for x in value if x in meta_data]:
                         counter += 1
+            else:
+                raise ValueError(f'Value for case {case_name} with key "{key}" -> None')
         if counter == count_values and counter != 0:
             return True
         return False
@@ -91,7 +93,7 @@ class DicomParser:
         ds = pydicom.filereader.dcmread(file_path, force=True)
         case_name = str(ds.get('PatientName'))
         for modality in self.search_tags:
-            if self.check_tags(ds, modality):
+            if self.check_tags(ds, modality, case_name):
                 logger.debug(f'found -> {modality} {file_path}')
                 self.path_memory[case_name][modality] = file_path
 
@@ -156,23 +158,19 @@ if __name__ == '__main__':
         src='/home/melandur/Data/Myocarditis/test3/',
         dst='/home/melandur/Downloads/test_me',
         min_number_of_slices=1,
-        file_types=['.dcm'],
+        file_types=[''],
         search_tags={
             't2_star': {
                 'SeriesDescription': [['T2'], ['STAR']],
-                'ScanningSequence': [['GR']],
                 'Modality': [['MR']],
-                'MRAcquisitionType': [['2D']],
             },
             't2_spair': {
                 'SeriesDescription': [['T2'], ['SPAIR']],
-                'ScanningSequence': [['SE']],
                 'Modality': [['MR']],
-                'MRAcquisitionType': [['2D']],
             },
         },
         exclude_tags=['DICOMDIR'],
-        log_level='INFO',
+        log_level='TRACE',
     )
     dp()
 
