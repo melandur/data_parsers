@@ -39,29 +39,31 @@ class DicomParser:
 
     def check_search_tags(self):
         """Check if search tags are valid"""
-        for _, nested in self.search_tags.items():
-            for key, value in nested['meta_filters'].items():
-                if not any(isinstance(sub, list) for sub in value):  # Check for nested list
-                    raise ValueError(f'Found {value}, expects nested list [[]]')
+        for sequence, nested in self.search_tags.items():
+            for meta_tag in self.search_tags[sequence]['meta_filters'].keys():
+                if not isinstance(self.search_tags[sequence]['meta_filters'][meta_tag]['+'], list):
+                    raise ValueError(
+                        f'Found {type(self.search_tags[sequence]["meta_filters"][meta_tag]["+"])}, expects list')
             if not isinstance(nested['min_slice_number'], int):
                 raise ValueError(f'Found {type(nested["min_slice_number"])}, expects integer')
             if not isinstance(nested['file_extensions'], list):
                 raise ValueError(f'Found {type(nested["file_extension"])}, expects list of strings"')
 
-    def show_certain_meta_data(self, tags: list = None) -> None:
+    def show_certain_meta_data(self, tags: list = None, min_slice_number: int = 0) -> None:
         """Iterate and visualise meta data for certain tags"""
         for root, _, files in os.walk(self.src):
             for file in files:
-
                 file_path = os.path.join(root, file)
-                ds = pydicom.filereader.dcmread(file_path, force=True)
-                if tags:
-                    for tag in tags:
-                        print(f'{tag:<20}{ds.get(tag)}')
-                else:
-                    print(ds)
-                print('')
-                break
+                if len(os.listdir(os.path.dirname(file_path))) >= min_slice_number:  # slice number
+                    print(file_path)
+                    ds = pydicom.filereader.dcmread(file_path, force=True)
+                    if tags:
+                        for tag in tags:
+                            print(f'{tag:<20}{ds.get(tag)}')
+                    else:
+                        print(ds)
+                    print('')
+                    break
 
     def check_file_type(self, modality: str, file_name: str) -> bool:
         """True if file ends with defined file type"""
@@ -77,16 +79,33 @@ class DicomParser:
             meta_data = ds.get(key)
             if meta_data:
                 search_values = self.search_tags[modality]['meta_filters'][key]
-                count_values += len(search_values)  # sum up multi tag statements
-                for value in search_values:
-                    logger.trace(f'{modality} -> {key} -> {value} : {meta_data}')
-                    if [x for x in value if x in meta_data]:
-                        counter += 1
+                count_values += len(search_values['+'])  # sum up multi tag statements
+                check_1, check_2 = False, True
+                if [x for x in search_values['+'] if x in meta_data]:
+                    check_1 = True
+                if [x for x in search_values['-'] if x in meta_data]:
+                    check_2 = False
+                if check_1 and check_2:
+                    counter += 1
+                    logger.trace(f'{modality} -> {key} -> {search_values} : {meta_data}')
             else:
                 raise ValueError(f'Value for case {case_name} with key "{key}" -> None')
         if counter == count_values and counter != 0:
             return True
         return False
+
+    def check_double_findings(self, case_name: str, modality: str, file_path: str) -> None:
+        """Helps to resolve double findings"""
+        if isinstance(self.path_memory[case_name][modality], str):
+            for sequence in self.search_tags.keys():
+                ds_1 = pydicom.filereader.dcmread(self.path_memory[case_name][modality])
+                ds_2 = pydicom.filereader.dcmread(file_path)
+                for search_tag in self.search_tags[sequence]['meta_filters'].keys():
+                    logger.error(f'found case -> {ds_1.get(search_tag)}')
+                    logger.error(f'found case -> {ds_2.get(search_tag)}')
+            raise ValueError(f'Modality {modality} got reassigned, add more specific meta_filters,'
+                             f'\nfile_path_1 -> {self.path_memory[case_name][modality]}'
+                             f'\nfile_path_2 -> {file_path}')
 
     def meta_data_search(self, file_path: str) -> None:
         """Check meta data tags"""
@@ -96,6 +115,7 @@ class DicomParser:
             if self.check_file(modality, file_path):
                 if self.check_tags(ds, modality, case_name):
                     logger.debug(f'found -> {modality} {file_path}')
+                    self.check_double_findings(case_name, modality, file_path)
                     self.path_memory[case_name][modality] = file_path
 
     def check_file(self, modality: str, file_path: str) -> bool:
@@ -116,6 +136,7 @@ class DicomParser:
                 self.meta_data_search(file_path)
                 break  # no need to check every file in folder, break out of folder
         logger.info(f'Path memory -> {json.dumps(self.path_memory, indent=4)}')
+        logger.info(f'Found unique cases -> {len(self.path_memory)}')
 
     def check_path_memory(self) -> None:
         """Assures that all sequences for each subject are completed"""
@@ -141,10 +162,11 @@ class DicomParser:
         reader.LoadPrivateTagsOn()
         reader.GlobalWarningDisplayOff()
         img = reader.Execute()
+        img = sitk.DICOMOrient(img, 'LPS')
         return img
 
     def convert_to_nifti(self):
-        """Convert path memory to nifti"""
+        """Convert path memory to nifti files"""
         for case_name in self.path_memory:
             state = '\u2715'
             for modality in self.path_memory[case_name]:
@@ -156,12 +178,13 @@ class DicomParser:
                     state = '\u2713'
                 except Exception as error:
                     logger.warning(error)
-            logger.info(f'{case_name} -> {state}')
+                finally:
+                    logger.info(f'{self.path_memory[case_name][modality]} -> {case_name} -> {state}')
 
 
 if __name__ == '__main__':
     dp = DicomParser(
-        src='/home/melandur/Data/Myocarditis/test2/',
+        src='/home/melandur/Data/Myocarditis/test1',
         dst='/home/melandur/Downloads/test_me',
         search_tags={
             # 't2_star': {
@@ -180,27 +203,30 @@ if __name__ == '__main__':
             #     'min_slice_number': 1,
             #     'file_extensions': [''],
             # },
-            'MA': {
+            'perfusion': {
                 'meta_filters': {
-                    'SeriesDescription': [['PERFUSION']],
-                    'Modality': [['MR']],
+                    'SeriesDescription': {'+': ['PERFUSION'], '-': ['STRESS', 'DRY', 'NORM',]},
+                    # 'Modality': {'+': ['MR'], '-': []},
                 },
-                'min_slice_number': 1,
-                'file_extensions': ['dcm'],
+                'min_slice_number': 200,
+                'file_extensions': [''],
             },
         },
         log_level='INFO',
     )
     dp()
 
-    # dp.show_certain_meta_data([
-    #     'ImageType',
-    #     'Modality',
-    #     'StudyDescription',
-    #     'SeriesNumber',
-    #     'SeriesDescription',
-    #     'MRAcquisitionType',
-    #     'PatientName',
-    #     'SequenceName',
-    #     'ProtocolName',
-    # ])
+    # dp.show_certain_meta_data(
+    #     [
+    #         'ImageType',
+    #         'Modality',
+    #         'StudyDescription',
+    #         'SeriesNumber',
+    #         'SeriesDescription',
+    #         'MRAcquisitionType',
+    #         'PatientName',
+    #         'SequenceName',
+    #         'ProtocolName',
+    #     ],
+    #     min_slice_number=1,
+    # )
