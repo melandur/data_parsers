@@ -1,5 +1,7 @@
+import copy
 import json
 import os
+import shutil
 import sys
 from collections import defaultdict
 
@@ -80,12 +82,23 @@ class DicomParser:
             if meta_data:
                 search_values = self.search_tags[modality]['meta_filters'][key]
                 count_values += len(search_values['+'])  # sum up multi tag statements
-                check_1, check_2 = False, True
+                check = [False]
                 if [x for x in search_values['+'] if x in meta_data]:
-                    check_1 = True
-                if [x for x in search_values['-'] if x in meta_data]:
-                    check_2 = False
-                if check_1 and check_2:
+                    check = [True]
+                if '-' in search_values:
+                    if [x for x in search_values['-'] if x in meta_data]:
+                        check.append(False)
+                if '<' in search_values:
+                    if [x for x in search_values['<'] if x < meta_data]:
+                        check.append(True)
+                    else:
+                        check.append(False)
+                if '>' in search_values:
+                    if [x for x in search_values['>'] if x > meta_data]:
+                        check.append(True)
+                    else:
+                        check.append(False)
+                if all(check):
                     counter += 1
                     logger.trace(f'{modality} -> {key} -> {search_values} : {meta_data}')
             else:
@@ -184,31 +197,15 @@ class DicomParser:
 
 if __name__ == '__main__':
     dp = DicomParser(
-        src='/home/melandur/Data/Myocarditis/test1',
+        src='/home/melandur/Data/Myocarditis/Kaggle/osic-pulmonary-fibrosis-progression/train',
         dst='/home/melandur/Downloads/test_me',
         search_tags={
-            # 't2_star': {
-            #     'meta_filters': {
-            #         'SeriesDescription': [['T2'], ['STAR']],
-            #         'Modality': [['MR']],
-            #     },
-            #     'min_slice_number': 1,
-            #     'file_extensions': [''],
-            # },
-            # 't2_spair': {
-            #     'meta_filters': {
-            #         'SeriesDescription': [['T2'], ['SPAIR']],
-            #         'Modality': [['MR']],
-            #     },
-            #     'min_slice_number': 1,
-            #     'file_extensions': [''],
-            # },
-            'perfusion': {
+            'ct': {
                 'meta_filters': {
-                    'SeriesDescription': {'+': ['PERFUSION'], '-': ['STRESS', 'DRY', 'NORM',]},
-                    # 'Modality': {'+': ['MR'], '-': []},
+                    'ImageType': {'+': ['ORIGINAL']},
+                    'Modality': {'+': ['MR']},
                 },
-                'min_slice_number': 200,
+                'min_slice_number': 1,
                 'file_extensions': [''],
             },
         },
@@ -230,3 +227,5 @@ if __name__ == '__main__':
     #     ],
     #     min_slice_number=1,
     # )
+
+
