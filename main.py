@@ -1,7 +1,5 @@
-import copy
 import json
 import os
-import shutil
 import sys
 from collections import defaultdict
 
@@ -45,7 +43,8 @@ class DicomParser:
             for meta_tag in self.search_tags[sequence]['meta_filters'].keys():
                 if not isinstance(self.search_tags[sequence]['meta_filters'][meta_tag]['+'], list):
                     raise ValueError(
-                        f'Found {type(self.search_tags[sequence]["meta_filters"][meta_tag]["+"])}, expects list')
+                        f'Found {type(self.search_tags[sequence]["meta_filters"][meta_tag]["+"])}, expects list'
+                    )
             if not isinstance(nested['min_slice_number'], int):
                 raise ValueError(f'Found {type(nested["min_slice_number"])}, expects integer')
             if not isinstance(nested['file_extensions'], list):
@@ -73,6 +72,17 @@ class DicomParser:
             return True
         return False
 
+    @staticmethod
+    def apply_filters(search_values: dict, meta_data: dict) -> bool:
+        """Run filters"""
+        check = [False]
+        if [x for x in search_values['+'] if x in meta_data]:
+            check = [True]
+        if '-' in search_values:
+            if [x for x in search_values['-'] if x in meta_data]:
+                check.append(False)
+        return all(check)
+
     def check_tags(self, ds: pydicom.filereader, modality: str, case_name: str) -> bool:
         """Return true in case one of each values for each key has a match"""
         counter = 0
@@ -82,23 +92,7 @@ class DicomParser:
             if meta_data:
                 search_values = self.search_tags[modality]['meta_filters'][key]
                 count_values += len(search_values['+'])  # sum up multi tag statements
-                check = [False]
-                if [x for x in search_values['+'] if x in meta_data]:
-                    check = [True]
-                if '-' in search_values:
-                    if [x for x in search_values['-'] if x in meta_data]:
-                        check.append(False)
-                if '<' in search_values:
-                    if [x for x in search_values['<'] if x < meta_data]:
-                        check.append(True)
-                    else:
-                        check.append(False)
-                if '>' in search_values:
-                    if [x for x in search_values['>'] if x > meta_data]:
-                        check.append(True)
-                    else:
-                        check.append(False)
-                if all(check):
+                if self.apply_filters(search_values, meta_data):
                     counter += 1
                     logger.trace(f'{modality} -> {key} -> {search_values} : {meta_data}')
             else:
@@ -116,9 +110,11 @@ class DicomParser:
                 for search_tag in self.search_tags[sequence]['meta_filters'].keys():
                     logger.error(f'found case -> {ds_1.get(search_tag)}')
                     logger.error(f'found case -> {ds_2.get(search_tag)}')
-            raise ValueError(f'Modality {modality} got reassigned, add more specific meta_filters,'
-                             f'\nfile_path_1 -> {self.path_memory[case_name][modality]}'
-                             f'\nfile_path_2 -> {file_path}')
+            raise ValueError(
+                f'Modality {modality} got reassigned, add more specific meta_filters,'
+                f'\nfile_path_1 -> {self.path_memory[case_name][modality]}'
+                f'\nfile_path_2 -> {file_path}'
+            )
 
     def meta_data_search(self, file_path: str) -> None:
         """Check meta data tags"""
@@ -203,7 +199,7 @@ if __name__ == '__main__':
             'ct': {
                 'meta_filters': {
                     'ImageType': {'+': ['ORIGINAL']},
-                    'Modality': {'+': ['MR']},
+                    # 'Modality': {'+': ['MR']},
                 },
                 'min_slice_number': 1,
                 'file_extensions': [''],
@@ -227,5 +223,3 @@ if __name__ == '__main__':
     #     ],
     #     min_slice_number=1,
     # )
-
-
