@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "dicom_utils"
+name = "data_parsers"
 version = "0.1.0"
 description = ""
-authors = ["melandur <you@example.com>"]
+authors = ["melandur <account@qunit.ch>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "3.9"
 dicom2nifti = "^2.4.2"
 pydicom = "^2.3.0"
 SimpleITK = "2.0.2"

@@ -193,33 +193,35 @@ class DicomParser:
 
 if __name__ == '__main__':
     dp = DicomParser(
-        src='/home/melandur/Data/Myocarditis/Kaggle/osic-pulmonary-fibrosis-progression/train',
-        dst='/home/melandur/Downloads/test_me',
+        src='/home/melandur/Data/Myocarditis/Boston_Data',
+        dst='/home/melandur/Downloads/test_me_you',
         search_tags={
-            'ct': {
+            't1': {
                 'meta_filters': {
-                    'ImageType': {'+': ['ORIGINAL']},
-                    # 'Modality': {'+': ['MR']},
+                    'SeriesDescription': {'+': ['T1', '']},
+                    'Modality': {'+': ['MR']},
+                    'MRAcquisitionType': {'+': ['2D']},
+
                 },
-                'min_slice_number': 1,
+                'min_slice_number': 2,
                 'file_extensions': [''],
             },
         },
-        log_level='INFO',
+        log_level='DEBUG',
     )
     dp()
 
-    # dp.show_certain_meta_data(
-    #     [
-    #         'ImageType',
-    #         'Modality',
-    #         'StudyDescription',
-    #         'SeriesNumber',
-    #         'SeriesDescription',
-    #         'MRAcquisitionType',
-    #         'PatientName',
-    #         'SequenceName',
-    #         'ProtocolName',
-    #     ],
-    #     min_slice_number=1,
-    # )
+    dp.show_certain_meta_data(
+        [
+            'ImageType',
+            'Modality',
+            'StudyDescription',
+            'SeriesNumber',
+            'SeriesDescription',
+            'MRAcquisitionType',
+            'PatientName',
+            'SequenceName',
+            'ProtocolName',
+        ],
+        min_slice_number=1,
+    )
