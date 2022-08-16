@@ -1,10 +1,9 @@
-import json
 import os
 import pickle
-import openpyxl
 from openpyxl import load_workbook
 from collections import defaultdict
 from loguru import logger
+import pandas as pd
 
 
 class NestedDefaultDict(defaultdict):
@@ -26,15 +25,9 @@ class ExcelParser:
         self.wb = None
         self.mode = None
         self.sheet = None
+        self.file_path = None
         self.data_name = None
         self.subject_name = None
-        self.template = NestedDefaultDict({
-            'roi': None,
-            'peak_strain_radial_%': None,
-            'peak_strain_circumf_%': None,
-            'time_to_peak_radial_ms': None,
-            'time_to_peak_circumf_ms': None,
-        })
         self.subject = NestedDefaultDict()
         os.makedirs(self.dst, exist_ok=True)
 
@@ -43,62 +36,57 @@ class ExcelParser:
         for _ in self.loop_files():
             self.get_meta()
             for row in self.loop_row():
-                # logger.info(row)
                 self.extract_name(row)
-                self.extract_data(row)
+                if self.mode == 'aha_diagram':
+                    self.extract_aha_diagram_2d(row)
+                if self.mode == 'global_roi':
+                    self.extract_global_roi_2d(row)
+                if self.mode == 'aha_polarmap':
+                    self.extract_aha_polarmap_2d(row)
+                if self.mode == 'roi_polarmap':
+                    self.extract_roi_polarmap_2d(row)
             logger.info(self.count)
 
     def load_file(self, file, extension='pkl'):
         """"""
         if file.endswith(extension) and not file.startswith('.'):
-            file_path = os.path.join(self.src, file)
+            self.file_path = os.path.join(self.src, file)
             if extension == 'pkl':
-                with open(file_path, 'rb') as file_object:
+                with open(self.file_path, 'rb') as file_object:
                     return pickle.load(file_object)
             self.subject_name = file.strip('.xlsx')
-            return load_workbook(file_path,
+            return load_workbook(self.file_path,
                                  read_only=False,
                                  data_only=True,
                                  keep_vba=False,
                                  keep_links=False)
 
-    # def extract_sheets_as_xlsx(self):
-    #     """"""
-    #     # print(os.listdir(self.src))
-    #     # for file in os.listdir(self.src):
-    #     file = self.src
-    #     wb = self.load_file(file, 'xlsx')
-    #     for sheet_name in wb.sheetnames:
-    #         if '_' in sheet_name or '2 ' in sheet_name:
-    #             if '#' not in sheet_name:
-    #                 logger.info(f'Extract -> {sheet_name}')
-    #                 extracted_sheet = wb[sheet_name]
-    #                 new_wb = openpyxl.Workbook()
-    #                 single_sheet = new_wb.active
-    #                 if '_' in sheet_name:
-    #                     new_sheet_name = sheet_name.split('_')[1]
-    #                 else:
-    #                     new_sheet_name = sheet_name[2:]
-    #                 single_sheet.title = new_sheet_name
-    #                 for row in extracted_sheet:
-    #                     for cell in row:
-    #                         single_sheet[cell.coordinate].value = cell.value
-    #                 new_wb.save(f'{os.path.join(self.dst, new_sheet_name)}.xlsx')
-    #                 new_wb.close()
-    #                 del new_wb
-    #                 del single_sheet
-    #     del wb
-
-    # def read_and_pickle(self):
-    #     """"""
-    #     for file_path in self.loop_files('xlsx'):
-    #         pickle_file = os.path.join(self.src, file_path.replace('xlsx', 'pkl'))
-    #         logger.info(pickle_file)
-    #         for sheet_name in self.wb.sheetnames:
-    #             if '_' not in sheet_name or '#' in sheet_name:
-    #                 del self.wb[sheet_name]
-    #         with open(pickle_file, 'wb') as file_object:
-    #             pickle.dump(self.wb, file_object)
+    def extract_sheets_as_xlsx(self):
+        """"""
+        # print(os.listdir(self.src))
+        # for file in os.listdir(self.src):
+        file = self.src
+        wb = self.load_file(file, 'xlsx')
+        for sheet_name in wb.sheetnames:
+            if '_' in sheet_name or '2 ' in sheet_name:
+                if '#' not in sheet_name:
+                    logger.info(f'Extract -> {sheet_name}')
+                    extracted_sheet = wb[sheet_name]
+                    new_wb = openpyxl.Workbook()
+                    single_sheet = new_wb.active
+                    if '_' in sheet_name:
+                        new_sheet_name = sheet_name.split('_')[1]
+                    else:
+                        new_sheet_name = sheet_name[2:]
+                    single_sheet.title = new_sheet_name
+                    for row in extracted_sheet:
+                        for cell in row:
+                            single_sheet[cell.coordinate].value = cell.value
+                    new_wb.save(f'{os.path.join(self.dst, new_sheet_name)}.xlsx')
+                    new_wb.close()
+                    del new_wb
+                    del single_sheet
+        del wb
 
     def loop_files(self):
         """Iterate over files"""
@@ -111,35 +99,12 @@ class ExcelParser:
 
     def loop_row(self):
         """"""
-        # print(self.sheet.cell(row=1, column=2))
-        # for i in range(1, self.sheet.nrows-1):
-        #     logger.info(self.sheet.cell_value(0, i))
         start_row = 229
         max_rows = self.sheet.max_row
-        max_columns = self.sheet.max_column
         self.count = 0
         for row_index in range(start_row, max_rows - 1):
             if 'left' in f'{self.sheet.cell(row=row_index, column=2).value}'.lower():
                 yield row_index
-            # q[0].append(self.sheet.cell(row=row_index, column=2).value)
-            # q[1].append(self.sheet.cell(row=row_index, column=3).value)
-
-        # logger.info(q[1])
-
-        # x = self.sheet.cell(row=(0, max_rows), column=2)
-        # print(x)
-
-        # for row_index in range(max_rows):
-        #     if row_index > 200:
-        #         if self.sheet.cell(row=row_index, column=2).value:
-
-        # if isinstance(self.sheet.cell(row=row_index, column=2).value, str):
-        # if 'Ventricle' in self.sheet.cell(row=row_index, column=2).value:
-        #     print(f'Left ventricle -> {self.sheet.cell(row=row_index, column=3).value}')
-        # if sheet.cell(row=row_index, column=1).value:
-        #     print(sheet.cell(row=row_index, column=1).value)
-        # if sheet.cell(row=row_index, column=0).value == name:
-        #     print(row_index)
 
     def get_meta(self):
         self.subject[self.subject_name] = NestedDefaultDict()
@@ -151,49 +116,102 @@ class ExcelParser:
     def extract_name(self, row):
         data_name = f'{self.sheet.cell(row=row, column=2).value}{self.sheet.cell(row=row, column=3).value}'
         data_name_split = data_name.split('-')
+        self.data_name = None
+        self.mode = None
 
         if len(data_name_split) == 3:
             if '2D' in data_name_split[1]:
                 sub_name_1 = data_name_split[1].replace('Results', '').strip()
                 sub_name_1 = sub_name_1.replace(' ', '_').lower()
                 sub_name_2 = data_name_split[2].replace('None', '').strip()
+                sub_name_2 = sub_name_2.replace('/', '-')
                 sub_name_2 = sub_name_2.replace(' ', '_').lower()
+                sub_name_2 = sub_name_2.replace('radial', 'rad')
+                sub_name_2 = sub_name_2.replace('longitudinal', 'lon')
+                sub_name_2 = sub_name_2.replace('circumferential', 'cir')
                 if 'AHA Diagram Data' in data_name_split[0]:
                     self.count += 1
-                    self.data_name = f'AHA_{sub_name_1}_{sub_name_2}'
+                    self.data_name = f'aha_{sub_name_1}_{sub_name_2}'
                     self.mode = 'aha_diagram'
                 elif 'Global and ROI Diagram Data' in data_name_split[0]:
                     self.count += 1
-                    self.data_name = f'Global_ROI_{sub_name_1}_{sub_name_2}'
+                    self.data_name = f'global_roi_{sub_name_1}_{sub_name_2}'
                     self.mode = 'global_roi'
-                else:
-                    self.data_name = None
-                    self.mode = None
+
         elif len(data_name_split) == 2:
             sub_name_1 = data_name_split[1].replace('Results', '').strip()
             sub_name_1 = sub_name_1.replace(' ', '_').lower()
             if '2D' in data_name_split[1]:
                 if 'ROI Polarmap Data' in data_name_split[0] or 'ROI Polarmap Data' in data_name_split[1]:
                     self.count += 1
-                    self.data_name = f'ROI_Polarmap_{sub_name_1}'
+                    self.data_name = 'roi_polarmap_2d'
                     self.mode = 'roi_polarmap'
                 elif 'AHA Polarmap Data' in data_name_split[0]:
                     self.count += 1
-                    self.data_name = f'AHA_Polarmap_{sub_name_1}'
                     self.mode = 'aha_polarmap'
-                else:
-                    self.data_name = None
-                    self.mode = None
+                    if 'long' in sub_name_1.lower():
+                        self.data_name = 'aha_polarmap_2d_long_axis'
+                    elif 'short' in sub_name_1.lower():
+                        self.data_name = 'aha_polarmap_2d_short_axis'
+                    else:
+                        raise ValueError('axis is not defined')
 
-    def extract_data(self, row):
-        """"""
+    def _table_end_finder(self, start_row, column=2, criteria=None):
+        """Count relative to the start point the number of row until the table ends"""
+        for row in range(start_row + 5, start_row + 400, 1):
+            if self.sheet.cell(row=row, column=column).value is criteria:
+                return row - start_row - 2
+        raise AssertionError(f'End of table search range reached, super long table or wrong end criteria -> {start_row}')
+
+    def extract_roi_polarmap_2d(self, row):
+        """Extract roi polarmap 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
-        # logger.info(f'{self.sheet.cell(row=row, column=2).value} <-> {self.sheet.cell(row=row, column=3).value}')
-    #     if self.sheet.cell(row=row+2, column=4).value == 'time (ms)' and self.sheet.cell(row=row+2, column=2).value == 'slice':
-    #         logger.info(self.sheet.cell(row=row, column=2).value)
+        row_end = self._table_end_finder(row, 2, None)
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:M')
+        df.columns = ['slices', 'roi', 'peak_strain_rad_%', 'peak_strain_cir_%', 'time_to_peak_rad_ms',
+                      'time_to_peak_cir_ms', 'peak_systolic_strain_rate_rad_1/s', 'peak_systolic_strain_rate_cir_1/s',
+                      'peak_diastolic_strain_rate_rad_1/s', 'peak_diastolic_strain_rate_cir_1/s',
+                      'peak_displacement_rad_mm', 'peak_displacement_cir_mm']
+        folder_path = os.path.join(self.dst, self.subject_name)
+        os.makedirs(folder_path, exist_ok=True)
+        df.to_excel(os.path.join(folder_path, f'{self.data_name}.xlsx'))
 
-        message = ''
-        # self.sheet.cell(row=row, column=3).value
+    def extract_aha_polarmap_2d(self, row):
+        """Extract aha polarmap 2d"""
+        logger.info(f'{row} {self.mode} {self.data_name}')
+        row_end = self._table_end_finder(row, 2, None)
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:L')
+        df.columns = ['aha_segment', 'peak_strain_rad_%', 'peak_strain_cir_%', 'time_to_peak_rad_ms',
+                      'time_to_peak_cir_ms', 'peak_systolic_strain_rate_rad_1/s', 'peak_systolic_strain_rate_cir_1/s',
+                      'peak_diastolic_strain_rate_rad_1/s', 'peak_diastolic_strain_rate_cir_1/s',
+                      'peak_displacement_rad_mm', 'peak_displacement_cir_mm']
+        folder_path = os.path.join(self.dst, self.subject_name)
+        os.makedirs(folder_path, exist_ok=True)
+        df.to_excel(os.path.join(folder_path, f'{self.data_name}.xlsx'))
+
+    def extract_aha_diagram_2d(self, row):
+        """Extract aha diagram 2d"""
+        logger.info(f'{row} {self.mode} {self.data_name}')
+        row_end = self._table_end_finder(row, 2, None)
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:AA')
+        header = [f'time_{x}_ms' for x in range(25)]
+        header[:0] = ['aha_segment']
+        df.columns = header
+        folder_path = os.path.join(self.dst, self.subject_name)
+        os.makedirs(folder_path, exist_ok=True)
+        df.to_excel(os.path.join(folder_path, f'{self.data_name}.xlsx'))
+
+    def extract_global_roi_2d(self, row):
+        """Extract global roi 2d"""
+        logger.info(f'{row} {self.mode} {self.data_name}')
+        row_end = self._table_end_finder(row, 2, None)
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:AB')
+        header = [f'time_{x}_ms' for x in range(25)]
+        header[:0] = ['slice', 'roi']
+        df.columns = header
+        folder_path = os.path.join(self.dst, self.subject_name)
+        os.makedirs(folder_path, exist_ok=True)
+        df.to_excel(os.path.join(folder_path, f'{self.data_name}.xlsx'))
 
 
 if __name__ == '__main__':
@@ -202,8 +220,9 @@ if __name__ == '__main__':
     x = time.time()
 
     ep = ExcelParser(
-        src='/home/melandur/Data/extracted',
+        src='/home/melandur/Data/Myocarditis/raw_csv/part_4',
         dst='/home/melandur/Data/Myocarditis/test_csv_processing')
 
     ep()
+
     logger.info(round((time.time() - x)))
