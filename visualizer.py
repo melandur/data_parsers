@@ -1,13 +1,13 @@
 """Read excel files and plot distribution of findings"""
 
 import os
+from collections import defaultdict
 
 import matplotlib.pyplot as plt
-import pandas as pd
-from collections import defaultdict
-from loguru import logger
-import seaborn as sns
 import numpy as np
+import pandas as pd
+import seaborn as sns
+from loguru import logger
 
 
 class NestedDefaultDict(defaultdict):

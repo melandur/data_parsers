@@ -1,9 +1,10 @@
 """Merge table of subjects"""
 
 import os
+
+import numpy as np
 import pandas as pd
 from loguru import logger
-import numpy as np
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
