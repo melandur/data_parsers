@@ -108,7 +108,7 @@ class ExtractSheets2Tables:
 
     def load_file(self, file):
         """Load file"""
-        if not file.startswith('.'):
+        if not file.startswith('.') and file.endswith('.xlsx'):
             self.file_path = os.path.join(self.src, file)
             self.subject_name = file.strip('.xlsx')
             return load_workbook(self.file_path, read_only=False, data_only=True, keep_vba=False, keep_links=False)
@@ -269,8 +269,8 @@ if __name__ == '__main__':
     # workbook_2_sheets()
 
     sheets_2_tables = ExtractSheets2Tables(
-        src='/home/melandur/Downloads/hello/',
-        dst='/home/melandur/Downloads/tables/',
+        src='/home/melandur/Data/extracted',
+        dst='/home/melandur/Downloads/tables_without_index',
     )
     sheets_2_tables()
 
