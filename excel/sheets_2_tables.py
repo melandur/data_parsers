@@ -19,59 +19,6 @@ class NestedDefaultDict(defaultdict):
         return repr(dict(self))
 
 
-class ExtractWorkbook2Sheets:
-    def __init__(self, src_file, dst_folder):
-        self.src_file = src_file
-        self.dst_folder = dst_folder
-        self.wb = None
-        self.sheet = None
-        self.subject_name = None
-        os.makedirs(self.dst_folder, exist_ok=True)
-
-    def __call__(self):
-        """Extract workbook to sheets"""
-        total_memory = psutil.virtual_memory().total / (1024**3)  # in GB
-        if total_memory < 30:  # warn if memory is less than 32GB
-            raise MemoryError('Not enough memory to extract workbook to sheets, 32 GB of RAM is required')
-        logger.info(f'Extract workbook to sheets is running...')
-
-        if not self.src_file.endswith('.xlsx') and not os.path.exists(self.src_file):
-            raise ValueError(f'{self.src_file} is not a valid ".xlsx" file')
-
-        self.extract_sheets()
-
-    def extract_sheets(self):
-        """Extract sheets"""
-        wb = self.load_file()  # load workbook
-        for sheet_name in wb.sheetnames:  # loop through sheets
-            if '_' in sheet_name or '2 ' in sheet_name:  # skip sheets with '_' or '2 ' in name
-                if '#' not in sheet_name:  # skip sheets with '#' in name
-                    logger.info(f'Extract -> {sheet_name}')
-                    extracted_sheet = wb[sheet_name]  # extract sheet
-                    new_wb = openpyxl.Workbook()  # create new workbook
-                    single_sheet = new_wb.active  # get active sheet
-                    if '_' in sheet_name:
-                        new_sheet_name = sheet_name.split('_')[1]
-                    else:
-                        new_sheet_name = sheet_name[2:]
-                    single_sheet.title = new_sheet_name
-                    for row in extracted_sheet:  # copy sheet to new workbook
-                        for cell in row:
-                            single_sheet[cell.coordinate].value = cell.value
-
-                    new_wb.save(f'{os.path.join(self.dst_folder, new_sheet_name)}.xlsx')
-                    new_wb.close()
-                    del new_wb
-                    del single_sheet
-        del wb
-
-    def load_file(self):
-        """Load file"""
-        if not self.src_file.startswith('.'):
-            self.subject_name = self.src_file.strip('.xlsx')
-            return load_workbook(self.src_file, read_only=False, data_only=True, keep_vba=False, keep_links=False)
-
-
 class ExtractSheets2Tables:
     def __init__(self, src, dst):
         self.src = src
@@ -183,7 +130,7 @@ class ExtractSheets2Tables:
                     else:
                         raise ValueError('axis is not defined')
 
-    def _table_end_finder(self, start_row, column=2, criteria=None):
+    def _table_end_finder(self, start_row, column, criteria=None):
         """Count relative to the start point the number of row until the table ends"""
         for row in range(start_row + 5, start_row + 400, 1):  # 400 is the maximum number of rows to search
             if self.sheet.cell(row=row, column=column).value is criteria:
@@ -196,20 +143,26 @@ class ExtractSheets2Tables:
         """Extract roi polarmap 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:M')
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:S')
         df.columns = [
             'slices',
             'roi',
-            'peak_strain_rad_%',
-            'peak_strain_cir_%',
-            'time_to_peak_rad_ms',
-            'time_to_peak_cir_ms',
-            'peak_systolic_strain_rate_rad_1/s',
-            'peak_systolic_strain_rate_cir_1/s',
-            'peak_diastolic_strain_rate_rad_1/s',
-            'peak_diastolic_strain_rate_cir_1/s',
-            'peak_displacement_rad_mm',
-            'peak_displacement_cir_mm',
+            'peak_strain_radial_%',
+            'peak_strain_circumf_%',
+            'time_to_peak_1_radial_ms',
+            'time_to_peak_1_circumf_ms',
+            'peak_systolic_strain_rate_radial_1/s',
+            'peak_systolic_strain_rate_circum_1/s',
+            'peak_diastolic_strain_rate_radial_1/s',
+            'peak_diastolic_strain_rate_circumf_1/s',
+            'peak_displacement_radial_mm',
+            'peak_displacement_circumf_mm',
+            'time_to_peak_2_radial_ms',
+            'time_to_peak_2_circumf_ms',
+            'peak_systolic_velocity_radial_mm/s',
+            'peak_systolic_velocity_circumf_deg/s',
+            'peak_diastolic_velocity_radial_mm/s',
+            'peak_diastolic_velocity_circumf_deg/s',
         ]
         return df
 
@@ -217,19 +170,34 @@ class ExtractSheets2Tables:
         """Extract aha polarmap 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:L')
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:R')
+        if 'short' in self.data_name:
+            axis = 'circumf'
+            unit = 'deg'
+        elif 'long' in self.data_name:
+            axis = 'longit'
+            unit = 'mm'
+        else:
+            raise ValueError('axis is not defined')
+
         df.columns = [
             'aha_segment',
-            'peak_strain_rad_%',
-            'peak_strain_cir_%',
-            'time_to_peak_rad_ms',
-            'time_to_peak_cir_ms',
-            'peak_systolic_strain_rate_rad_1/s',
-            'peak_systolic_strain_rate_cir_1/s',
-            'peak_diastolic_strain_rate_rad_1/s',
-            'peak_diastolic_strain_rate_cir_1/s',
-            'peak_displacement_rad_mm',
-            'peak_displacement_cir_mm',
+            'peak_strain_radial_%',
+            f'peak_strain_{axis}_%',
+            'time_to_peak_1_radial_ms',
+            f'time_to_peak_1_{axis}_ms',
+            'peak_systolic_strain_rate_radial_1/s',
+            f'peak_systolic_strain_rate_{axis}_1/s',
+            'peak_diastolic_strain_rate_radial_1/s',
+            f'peak_diastolic_strain_rate_{axis}_1/s',
+            'peak_displacement_radial_mm',
+            f'peak_displacement_{axis}_{unit}',
+            'time_to_peak_2_radial_ms',
+            f'time_to_peak_2_{axis}_ms',
+            'peak_systolic_velocity_radial_mm/s',
+            f'peak_systolic_velocity_{axis}_{unit}/s',
+            'peak_diastolic_velocity_radial_mm/s',
+            f'peak_diastolic_velocity_{axis}_{unit}/s',
         ]
         return df
 
@@ -238,35 +206,41 @@ class ExtractSheets2Tables:
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_end_finder(row, 2, None)
         df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:AA')
-        header = [f'time_{x}_ms' for x in range(25)]
+        header = df.head()
+        header = header.columns.values.tolist()
+        header = [x for x in header if type(x) != str]
+        header = [f'time_{x}_ms' for x in header]
         header[:0] = ['aha_segment']
-        df.columns = header
-        return df
+        if len(header) == len(df.columns):
+            df.columns = header
+            return df
+        return None
 
     def extract_global_roi_2d(self, row):
         """Extract global roi 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_end_finder(row, 2, None)
         df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:AB')
-        header = [f'time_{x}_ms' for x in range(25)]
+        header = df.head()
+        header = header.columns.values.tolist()
+        header = [x for x in header if type(x) != str]
+        header = [f'time_{x}_ms' for x in header]
         header[:0] = ['slice', 'roi']
-        df.columns = header
-        return df
+        if len(header) == len(df.columns):
+            df.columns = header
+            return df
+        return None
 
     def save(self, df):
-        file_path = os.path.join(self.dst, self.subject_name, f'{self.data_name}.xlsx')
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        df.to_excel(file_path, index=False)  # index=False to avoid the index column in the excel file
+        """Save dataframe to excel"""
+        if df is not None:
+            file_path = os.path.join(self.dst, self.subject_name, f'{self.subject_name}_{self.data_name}.xlsx')
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            df.to_excel(file_path, index=False)  # index=False to avoid the index column in the excel file
 
 
 if __name__ == '__main__':
     x = time.time()
-
-    # workbook_2_sheets = ExtractWorkbook2Sheets(
-    #     src_file='/home/melandur/Data/Myocarditis/CRF_control/CRF_controls/CRF FlamBer/D. Strain_v3b_FlamBer_61-120.xlsx',
-    #     dst_folder='/home/melandur/Downloads/hello/',
-    # )
-    # workbook_2_sheets()
 
     sheets_2_tables = ExtractSheets2Tables(
         src='/home/melandur/Data/extracted',
