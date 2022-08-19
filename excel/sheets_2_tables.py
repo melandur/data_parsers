@@ -100,9 +100,9 @@ class ExtractSheets2Tables:
                 sub_name_2 = data_name_split[2].replace('None', '').strip()
                 sub_name_2 = sub_name_2.replace('/', '-')
                 sub_name_2 = sub_name_2.replace(' ', '_').lower()
-                sub_name_2 = sub_name_2.replace('radial', 'rad')
-                sub_name_2 = sub_name_2.replace('longitudinal', 'lon')
-                sub_name_2 = sub_name_2.replace('circumferential', 'cir')
+                sub_name_2 = sub_name_2.replace('radial', 'radial')
+                sub_name_2 = sub_name_2.replace('longitudinal', 'longit')
+                sub_name_2 = sub_name_2.replace('circumferential', 'circumf')
                 if 'AHA Diagram Data' in data_name_split[0]:
                     self.count += 1
                     self.data_name = f'aha_{sub_name_1}_{sub_name_2}'
@@ -152,7 +152,7 @@ class ExtractSheets2Tables:
             'time_to_peak_1_radial_ms',
             'time_to_peak_1_circumf_ms',
             'peak_systolic_strain_rate_radial_1/s',
-            'peak_systolic_strain_rate_circum_1/s',
+            'peak_systolic_strain_rate_circumf_1/s',
             'peak_diastolic_strain_rate_radial_1/s',
             'peak_diastolic_strain_rate_circumf_1/s',
             'peak_displacement_radial_mm',
