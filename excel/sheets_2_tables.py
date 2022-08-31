@@ -2,11 +2,14 @@ import os
 import time
 from collections import defaultdict
 
-import openpyxl
 import pandas as pd
-import psutil
 from loguru import logger
 from openpyxl import load_workbook
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', None)
 
 
 class NestedDefaultDict(defaultdict):
@@ -55,22 +58,22 @@ class ExtractSheets2Tables:
 
     def load_file(self, file):
         """Load file"""
-        if not file.startswith('.') and file.endswith('.xlsx'):
-            self.file_path = os.path.join(self.src, file)
-            self.subject_name = file.strip('.xlsx')
-            return load_workbook(self.file_path, read_only=False, data_only=True, keep_vba=False, keep_links=False)
+        self.file_path = os.path.join(self.src, file)
+        self.subject_name = file.strip('.xlsx')
+        return load_workbook(self.file_path, read_only=False, data_only=True, keep_vba=False, keep_links=False)
 
     def loop_files(self):
         """Iterate over files"""
         for file in os.listdir(self.src):
-            logger.info(f'File -> {file}')
-            self.wb = self.load_file(file)
-            sheet_names = self.wb.sheetnames
-            self.sheet = self.wb[sheet_names[0]]
-            yield
+            if file.endswith('.xlsx') and not file.startswith('.'):
+                logger.info(f'File -> {file}')
+                self.wb = self.load_file(file)
+                sheet_names = self.wb.sheetnames
+                self.sheet = self.wb[sheet_names[0]]
+                yield
 
     def loop_row(self):
-        """Iterate over rows"""
+        """Iterate over rows and return certain row numbers"""
         start_row = 229
         max_rows = self.sheet.max_row
         self.count = 0
@@ -79,7 +82,7 @@ class ExtractSheets2Tables:
                 yield row_index
 
     def get_meta(self):
-        """Get meta data"""
+        """Get meta data from header part"""
         self.subject[self.subject_name] = NestedDefaultDict()
         self.subject[self.subject_name]['meta']['study_date'] = self.sheet.cell(row=212, column=3).value
         self.subject[self.subject_name]['meta']['modality'] = self.sheet.cell(row=219, column=3).value
@@ -201,35 +204,51 @@ class ExtractSheets2Tables:
         ]
         return df
 
+    @staticmethod
+    def rearrange_time_helper(df: pd.DataFrame) -> pd.DataFrame or None:
+        """Rearrange time columns"""
+        header = df.head().columns.values.tolist()
+        counter = 0
+        for idx, name in enumerate(header):
+            if 'unnamed' in name.lower() or 'ms' in name.lower():
+                header[idx] = f'sample_{counter}'
+                counter += 1
+
+        df.columns = header
+        first_row = df.iloc[0]
+        nan_count = first_row.isna().sum()
+        first_row = first_row.dropna()
+        first_row = first_row.values.tolist()
+
+        if df.iloc[-1].isna().sum() == len(df.columns):
+            df = df.drop(df.index[-1])
+
+        for idx, name in enumerate(first_row):
+            df.insert(int(idx * 2 + nan_count), f'time_{idx}', name)
+
+        df = df.drop(df.index[0])  # drop the first row
+
+        nan_count = df.isna().sum().sum()
+        non_nan_count = df.notna().sum().sum()
+        if nan_count < non_nan_count:
+            return df
+        return None
+
     def extract_aha_diagram_2d(self, row):
         """Extract aha diagram 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:AA')
-        header = df.head()
-        header = header.columns.values.tolist()
-        header = [x for x in header if type(x) != str]
-        header = [f'time_{x}_ms' for x in header]
-        header[:0] = ['aha_segment']
-        if len(header) == len(df.columns):
-            df.columns = header
-            return df
-        return None
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AA')
+        df = self.rearrange_time_helper(df)
+        return df
 
     def extract_global_roi_2d(self, row):
         """Extract global roi 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:AB')
-        header = df.head()
-        header = header.columns.values.tolist()
-        header = [x for x in header if type(x) != str]
-        header = [f'time_{x}_ms' for x in header]
-        header[:0] = ['slice', 'roi']
-        if len(header) == len(df.columns):
-            df.columns = header
-            return df
-        return None
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
+        df = self.rearrange_time_helper(df)
+        return df
 
     def save(self, df):
         """Save dataframe to excel"""
@@ -243,10 +262,9 @@ if __name__ == '__main__':
     x = time.time()
 
     sheets_2_tables = ExtractSheets2Tables(
-        src='/home/melandur/Data/extracted',
-        dst='/home/melandur/Downloads/tables_without_index',
+        src='/home/melandur/tmp/small_data',
+        dst='/home/melandur/tmp/test',
     )
     sheets_2_tables()
 
-    logger.info(f'Execution time: {round((time.time() - x))/60} minutes')
-
+    logger.info(f'Execution time: {round((time.time() - x) / 60, 1)} minutes')
