@@ -22,40 +22,47 @@ class ExtractWorkbook2Sheets:
         if total_memory < 30:  # warn if memory is less than 32GB
             raise MemoryError('Not enough memory to extract workbook to sheets, 32 GB of RAM is required')
         logger.info(f'Extract workbook to sheets is running...')
-
         if not self.src_file.endswith('.xlsx') and not os.path.exists(self.src_file):
             raise ValueError(f'{self.src_file} is not a valid ".xlsx" file')
-
         self.extract_sheets()
 
     def extract_sheets(self):
         """Extract sheets"""
         wb = self.load_file()  # load workbook
         for sheet_name in wb.sheetnames:  # loop through sheets
-            if '_' in sheet_name or '2 ' in sheet_name:  # skip sheets with '_' or '2 ' in name
-                if '#' not in sheet_name:  # skip sheets with '#' in name
-                    logger.info(f'Extract -> {sheet_name}')
-                    extracted_sheet = wb[sheet_name]  # extract sheet
-                    new_wb = openpyxl.Workbook()  # create new workbook
-                    single_sheet = new_wb.active  # get active sheet
-                    if '_' in sheet_name:
-                        new_sheet_name = sheet_name.split('_')[1]
-                    else:
-                        new_sheet_name = sheet_name[2:]
-                    single_sheet.title = new_sheet_name
-                    for row in extracted_sheet:  # copy sheet to new workbook
-                        for cell in row:
-                            single_sheet[cell.coordinate].value = cell.value
+            if self.check_sheet_name(sheet_name):
+                old_sheet = wb[sheet_name]  # extract sheet
+                new_wb = openpyxl.Workbook()  # create new workbook
+                new_sheet = new_wb.active  # get active sheet
+                clean_sheet_name = self.get_clean_sheet_name(sheet_name)
+                new_sheet.title = clean_sheet_name
+                for row in old_sheet:  # copy old sheet to new sheet
+                    for cell in row:
+                        new_sheet[cell.coordinate].value = cell.value
+                new_wb.save(f'{os.path.join(self.dst_folder, clean_sheet_name)}.xlsx')
+                new_wb.close()
 
-                    new_wb.save(f'{os.path.join(self.dst_folder, new_sheet_name)}.xlsx')
-                    new_wb.close()
-                    del new_wb
-                    del single_sheet
-        del wb
+    @staticmethod
+    def get_clean_sheet_name(sheet_name: str) -> str:
+        """Get a clean sheet name"""
+        if '_' in sheet_name:
+            return sheet_name.split('_')[1]  # get sheet name after '_'
+        if ' ' in sheet_name:
+            return sheet_name.split(' ')[1]  # get sheet name after ' '
+        return f'fix_me_{sheet_name}'
+
+    @staticmethod
+    def check_sheet_name(sheet_name: str):
+        """Check sheet name"""
+        if ('_' in sheet_name or '2 ' in sheet_name) and '#' not in sheet_name:
+            logger.info(f'Extract sheet -> {sheet_name}')
+            return True
+        logger.info(f'Ignore sheet -> {sheet_name}')
+        return False
 
     def load_file(self):
         """Load file"""
-        if not self.src_file.startswith('.'):
+        if not self.src_file.startswith('.'):  # avoid loading hidden tmp file
             self.subject_name = self.src_file.strip('.xlsx')
             return load_workbook(self.src_file, read_only=False, data_only=True, keep_vba=False, keep_links=False)
 
@@ -64,9 +71,9 @@ if __name__ == '__main__':
     x = time.time()
 
     workbook_2_sheets = ExtractWorkbook2Sheets(
-        src_file='/home/melandur/Data/Myocarditis/CRF_control/CRF_controls/CRF FlamBer/D. Strain_v3b_FlamBer_61-120.xlsx',
+        src_file='/home/melandur/tmp/a. Myocarditis_strain_Sophie#1.xlsx',
         dst_folder='/home/melandur/Downloads/hello/',
     )
     workbook_2_sheets()
 
-    logger.info(f'Execution time: {round((time.time() - x))/60} minutes')
+    logger.info(f'Execution time: {round((time.time() - x) / 60, 1)} minutes')

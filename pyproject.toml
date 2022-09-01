@@ -24,6 +24,7 @@ PyQt5 = "^5.15.7"
 glue-vispy-viewers = "^1.0.5"
 glue-plotly = "^0.3"
 specviz = "^0.8"
+pylint = "^2.15.0"
 
 [tool.poetry.dev-dependencies]
 
