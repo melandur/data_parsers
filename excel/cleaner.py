@@ -10,6 +10,7 @@ pd.set_option('display.max_colwidth', None)
 
 
 class TableCleaner:
+    """Intra-/Extrapolate NaN rows or delete them"""
     def __init__(self, src: str, dst: str):
         self.src = src
         self.dst = dst
