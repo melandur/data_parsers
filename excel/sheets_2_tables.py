@@ -6,6 +6,8 @@ import pandas as pd
 from loguru import logger
 from openpyxl import load_workbook
 
+from excel.path_master import EXTRACTED_PATH, TABLE_WISE_PATH
+
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
@@ -23,9 +25,10 @@ class NestedDefaultDict(defaultdict):
 
 
 class ExtractSheets2Tables:
-    def __init__(self, src, dst):
+    def __init__(self, src: str, dst: str) -> None:
         self.src = src
         self.dst = dst
+        self.tic = time.time()
         self.wb = None
         self.mode = None
         self.count = None
@@ -36,7 +39,7 @@ class ExtractSheets2Tables:
         self.subject = NestedDefaultDict()
         os.makedirs(self.dst, exist_ok=True)
 
-    def __call__(self):
+    def __call__(self) -> None:
         """Extract sheets to tables"""
         for _ in self.loop_files():
             self.get_meta()
@@ -54,15 +57,22 @@ class ExtractSheets2Tables:
                 if self.mode == 'roi_polarmap':
                     df = self.extract_roi_polarmap_2d(row)
                     self.save(df)
+                if self.mode == 'volume':
+                    df = self.extract_volume_3d(row)
+                    self.save(df)
             logger.info(self.count)
 
-    def load_file(self, file):
+    def __del__(self) -> None:
+        """What time is it"""
+        logger.info(f'Execution time: {round((time.time() - self.tic) / 60, 1)} minutes')
+
+    def load_file(self, file: str) -> load_workbook:
         """Load file"""
         self.file_path = os.path.join(self.src, file)
         self.subject_name = file.strip('.xlsx')
         return load_workbook(self.file_path, read_only=False, data_only=True, keep_vba=False, keep_links=False)
 
-    def loop_files(self):
+    def loop_files(self) -> range:
         """Iterate over files"""
         for file in os.listdir(self.src):
             if file.endswith('.xlsx') and not file.startswith('.'):
@@ -72,7 +82,7 @@ class ExtractSheets2Tables:
                 self.sheet = self.wb[sheet_names[0]]
                 yield
 
-    def loop_row(self):
+    def loop_row(self) -> range:
         """Iterate over rows and return certain row numbers"""
         start_row = 229
         max_rows = self.sheet.max_row
@@ -81,7 +91,7 @@ class ExtractSheets2Tables:
             if 'left' in f'{self.sheet.cell(row=row_index, column=2).value}'.lower():
                 yield row_index
 
-    def get_meta(self):
+    def get_meta(self) -> None:
         """Get meta data from header part"""
         self.subject[self.subject_name] = NestedDefaultDict()
         self.subject[self.subject_name]['meta']['study_date'] = self.sheet.cell(row=212, column=3).value
@@ -89,7 +99,7 @@ class ExtractSheets2Tables:
         self.subject[self.subject_name]['meta']['sequence_name'] = self.sheet.cell(row=223, column=3).value
         self.subject[self.subject_name]['meta']['protocol_name'] = self.sheet.cell(row=224, column=3).value
 
-    def detect_table_name(self, row):
+    def detect_table_name(self, row: int) -> None:
         """Detect table name"""
         data_name = f'{self.sheet.cell(row=row, column=2).value}{self.sheet.cell(row=row, column=3).value}'
         data_name_split = data_name.split('-')
@@ -97,23 +107,27 @@ class ExtractSheets2Tables:
         self.mode = None
 
         if len(data_name_split) == 3:
-            if '2D' in data_name_split[1]:
-                sub_name_1 = data_name_split[1].replace('Results', '').strip()
-                sub_name_1 = sub_name_1.replace(' ', '_').lower()
-                sub_name_2 = data_name_split[2].replace('None', '').strip()
-                sub_name_2 = sub_name_2.replace('/', '-')
-                sub_name_2 = sub_name_2.replace(' ', '_').lower()
-                sub_name_2 = sub_name_2.replace('radial', 'radial')
-                sub_name_2 = sub_name_2.replace('longitudinal', 'longit')
-                sub_name_2 = sub_name_2.replace('circumferential', 'circumf')
-                if 'AHA Diagram Data' in data_name_split[0]:
-                    self.count += 1
-                    self.data_name = f'aha_{sub_name_1}_{sub_name_2}'
-                    self.mode = 'aha_diagram'
-                elif 'Global and ROI Diagram Data' in data_name_split[0]:
-                    self.count += 1
-                    self.data_name = f'global_roi_{sub_name_1}_{sub_name_2}'
-                    self.mode = 'global_roi'
+            logger.info(data_name_split)
+            sub_name_1 = data_name_split[1].replace('Results', '').strip()
+            sub_name_1 = sub_name_1.replace(' ', '_').lower()
+            sub_name_2 = data_name_split[2].replace('None', '').strip()
+            sub_name_2 = sub_name_2.replace('/', '-')
+            sub_name_2 = sub_name_2.replace(' ', '_').lower()
+            sub_name_2 = sub_name_2.replace('radial', 'radial')
+            sub_name_2 = sub_name_2.replace('longitudinal', 'longit')
+            sub_name_2 = sub_name_2.replace('circumferential', 'circumf')
+            if 'AHA Diagram Data' in data_name_split[0]:
+                self.count += 1
+                self.data_name = f'aha_{sub_name_1}_{sub_name_2}'
+                self.mode = 'aha_diagram'
+            elif 'Global and ROI Diagram Data' in data_name_split[0]:
+                self.count += 1
+                self.data_name = f'global_roi_{sub_name_1}_{sub_name_2}'
+                self.mode = 'global_roi'
+            elif 'Volume' in data_name_split[2]:
+                self.count += 1
+                self.data_name = f'volume_{sub_name_1}_(ml)'
+                self.mode = 'volume'
 
         elif len(data_name_split) == 2:
             sub_name_1 = data_name_split[1].replace('Results', '').strip()
@@ -133,7 +147,7 @@ class ExtractSheets2Tables:
                     else:
                         raise ValueError('axis is not defined')
 
-    def _table_end_finder(self, start_row, column, criteria=None):
+    def _table_end_finder(self, start_row: int, column: int, criteria: str or None = None) -> int:
         """Count relative to the start point the number of row until the table ends"""
         for row in range(start_row + 5, start_row + 400, 1):  # 400 is the maximum number of rows to search
             if self.sheet.cell(row=row, column=column).value is criteria:
@@ -142,7 +156,7 @@ class ExtractSheets2Tables:
             f'End of table search range reached, super long table or wrong end criteria -> {start_row}'
         )
 
-    def extract_roi_polarmap_2d(self, row):
+    def extract_roi_polarmap_2d(self, row: int) -> pd.DataFrame:
         """Extract roi polarmap 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_end_finder(row, 2, None)
@@ -169,7 +183,7 @@ class ExtractSheets2Tables:
         ]
         return df
 
-    def extract_aha_polarmap_2d(self, row):
+    def extract_aha_polarmap_2d(self, row: int) -> pd.DataFrame:
         """Extract aha polarmap 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_end_finder(row, 2, None)
@@ -205,8 +219,8 @@ class ExtractSheets2Tables:
         return df
 
     @staticmethod
-    def rearrange_time_helper(df: pd.DataFrame) -> pd.DataFrame or None:
-        """Rearrange time columns"""
+    def rearrange_time_helper_2d(df: pd.DataFrame) -> pd.DataFrame or None:
+        """Rearrange time columns for 2d"""
         header = df.head().columns.values.tolist()
         counter = 0
         for idx, name in enumerate(header):
@@ -227,44 +241,96 @@ class ExtractSheets2Tables:
             df.insert(int(idx * 2 + nan_count), f'time_{idx}', name)
 
         df = df.drop(df.index[0])  # drop the first row
-
         nan_count = df.isna().sum().sum()
         non_nan_count = df.notna().sum().sum()
         if nan_count < non_nan_count:
             return df
         return None
 
-    def extract_aha_diagram_2d(self, row):
+    @staticmethod
+    def rearrange_time_helper_3d(df: pd.DataFrame) -> pd.DataFrame or None:
+        """Rearrange time columns for 3d"""
+        header = df.head().columns.values.tolist()
+        counter = 0
+
+        for idx, name in enumerate(header):
+            if 'unnamed' in name.lower() or 'ms' in name.lower():
+                header[idx] = f'sample_{counter}'
+                counter += 1
+
+        df.columns = header
+        first_row = df.iloc[0]
+        nan_count = first_row.isna().sum()
+        first_row = first_row.dropna()
+        first_row = first_row.values.tolist()
+
+        if df.iloc[-1].isna().sum() == len(df.columns):  # drop the last row if it is empty
+            df = df.drop(df.index[-1])
+
+        for idx, name in enumerate(first_row):  # insert time columns
+            df.insert(int(idx * 2 + nan_count), f'time_{idx - 1}', name)
+
+        df = df.drop(df.columns[0], axis=1)  # drop the first column
+        df = df.drop(df.index[0])  # drop the first row
+        nan_count = df.isna().sum().sum()
+        non_nan_count = df.notna().sum().sum()
+        if nan_count < non_nan_count:
+            return df
+        return None
+
+    def extract_aha_diagram_2d(self, row: int) -> pd.DataFrame or None:
         """Extract aha diagram 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_end_finder(row, 2, None)
         df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AA')
-        df = self.rearrange_time_helper(df)
+        if df.empty:
+            logger.warning(f'Empty dataframe for {self.subject_name} {self.mode} {self.data_name}')
+            return None
+        df = self.rearrange_time_helper_2d(df)
         return df
 
-    def extract_global_roi_2d(self, row):
+    def extract_global_roi_2d(self, row: int) -> pd.DataFrame or None:
         """Extract global roi 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_end_finder(row, 2, None)
         df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
-        df = self.rearrange_time_helper(df)
+        if df.empty:
+            logger.warning(f'Empty dataframe for {self.subject_name} {self.mode} {self.data_name}')
+            return None
+        df = self.rearrange_time_helper_2d(df)
         return df
 
-    def save(self, df):
+    def extract_volume_3d(self, row: int) -> pd.DataFrame or None:
+        """Extract volume 3d"""
+        logger.info(f'{row} {self.mode} {self.data_name}')
+        row_end = self._table_end_finder(row, 2, None)
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AA')
+        if df.empty:
+            logger.warning(f'Empty dataframe for {self.subject_name} {self.mode} {self.data_name}')
+            return None
+        df = self.rearrange_time_helper_3d(df)
+        return df
+
+    def save(self, df: pd.DataFrame) -> None:
         """Save dataframe to excel"""
         if df is not None:
-            file_path = os.path.join(self.dst, self.subject_name, f'{self.subject_name}_{self.data_name}.xlsx')
+            if '2d' in self.data_name:
+                d_name = '2d'
+            elif '3d' in self.data_name:
+                d_name = '3d'
+            else:
+                raise ValueError(f'Data is not 2d or 3d -> {self.subject_name}')
+            file_path = os.path.join(self.dst, self.subject_name, d_name, f'{self.subject_name}_{self.data_name}')
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            df.to_excel(file_path, index=False)  # index=False to avoid the index column in the excel file
+            df.to_csv(f'{file_path}.csv', index=False)
 
 
 if __name__ == '__main__':
-    x = time.time()
 
     sheets_2_tables = ExtractSheets2Tables(
-        src='/home/melandur/tmp/small_data',
-        dst='/home/melandur/tmp/test',
+        src=EXTRACTED_PATH,
+        dst=TABLE_WISE_PATH,
     )
     sheets_2_tables()
 
-    logger.info(f'Execution time: {round((time.time() - x) / 60, 1)} minutes')
+

@@ -6,19 +6,22 @@ import psutil
 from loguru import logger
 from openpyxl import load_workbook
 
+from excel.path_master import EXTRACTED_PATH
+
 
 class ExtractWorkbook2Sheets:
-    def __init__(self, src_file, dst_folder):
+    def __init__(self, src_file: str, dst_folder: str) -> None:
         self.src_file = src_file
         self.dst_folder = dst_folder
+        self.tic = time.time()
         self.wb = None
         self.sheet = None
         self.subject_name = None
         os.makedirs(self.dst_folder, exist_ok=True)
 
-    def __call__(self):
+    def __call__(self) -> None:
         """Extract workbook to sheets"""
-        total_memory = psutil.virtual_memory().total / (1024**3)  # in GB
+        total_memory = psutil.virtual_memory().total / (1024 ** 3)  # in GB
         if total_memory < 30:  # warn if memory is less than 32GB
             raise MemoryError('Not enough memory to extract workbook to sheets, 32 GB of RAM is required')
         logger.info(f'Extract workbook to sheets is running...')
@@ -26,7 +29,11 @@ class ExtractWorkbook2Sheets:
             raise ValueError(f'{self.src_file} is not a valid ".xlsx" file')
         self.extract_sheets()
 
-    def extract_sheets(self):
+    def __del__(self) -> None:
+        """What time is it"""
+        logger.info(f'Execution time: {round((time.time() - self.tic) / 60, 1)} minutes')
+
+    def extract_sheets(self) -> None:
         """Extract sheets"""
         wb = self.load_file()  # load workbook
         for sheet_name in wb.sheetnames:  # loop through sheets
@@ -52,7 +59,7 @@ class ExtractWorkbook2Sheets:
         return f'fix_me_{sheet_name}'
 
     @staticmethod
-    def check_sheet_name(sheet_name: str):
+    def check_sheet_name(sheet_name: str) -> bool:
         """Check sheet name"""
         if ('_' in sheet_name or '2 ' in sheet_name) and '#' not in sheet_name:
             logger.info(f'Extract sheet -> {sheet_name}')
@@ -60,7 +67,7 @@ class ExtractWorkbook2Sheets:
         logger.info(f'Ignore sheet -> {sheet_name}')
         return False
 
-    def load_file(self):
+    def load_file(self) -> openpyxl.Workbook:
         """Load file"""
         if not self.src_file.startswith('.'):  # avoid loading hidden tmp file
             self.subject_name = self.src_file.strip('.xlsx')
@@ -68,12 +75,9 @@ class ExtractWorkbook2Sheets:
 
 
 if __name__ == '__main__':
-    x = time.time()
 
     workbook_2_sheets = ExtractWorkbook2Sheets(
         src_file='/home/melandur/tmp/a. Myocarditis_strain_Sophie#1.xlsx',
-        dst_folder='/home/melandur/Downloads/hello/',
+        dst_folder=EXTRACTED_PATH,
     )
     workbook_2_sheets()
-
-    logger.info(f'Execution time: {round((time.time() - x) / 60, 1)} minutes')
