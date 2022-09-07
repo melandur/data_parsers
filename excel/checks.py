@@ -1,7 +1,9 @@
 import os
 import shutil
 
-from excel.path_master import CLEANED_PATH
+from loguru import logger
+
+from excel.path_master import CLEANED_PATH, CHECKED_PATH
 
 
 class SplitByCompleteness:
@@ -31,7 +33,7 @@ class SplitByCompleteness:
         """Count the number of files in a case folder"""
         for _, _, files in os.walk(os.path.join(self.src, case)):
             for file in files:
-                if file.endswith('.csv'):
+                if file.endswith('.xlsx'):
                     self.count += 1
 
     def divide_cases(self) -> None:
@@ -44,19 +46,23 @@ class SplitByCompleteness:
 
     def move_files(self) -> None:
         """Move files to their destination folder"""
-        complete_file_path = os.path.join(self.dst, 'complete')
-        os.makedirs(complete_file_path, exist_ok=True)
+        logger.info('Copy complete cases')
         for case in self.complete_files:
-            shutil.move(os.path.join(self.src, case), complete_file_path)
+            complete_file_path = os.path.join(self.dst, 'complete', case)
+            os.makedirs(complete_file_path, exist_ok=True)
+            shutil.copytree(os.path.join(self.src, case), complete_file_path, dirs_exist_ok=True)
+            logger.info(f'-> {case}')
 
-        missing_file_path = os.path.join(self.dst, 'missing')
-        os.makedirs(missing_file_path, exist_ok=True)
+        logger.info('Copy missing cases')
         for case in self.missing_files:
-            shutil.move(os.path.join(self.src, case), missing_file_path)
+            missing_file_path = os.path.join(self.dst, 'missing', case)
+            os.makedirs(missing_file_path, exist_ok=True)
+            shutil.copytree(os.path.join(self.src, case), missing_file_path, dirs_exist_ok=True)
+            logger.info(f'-> {case}')
 
 
 if __name__ == '__main__':
     src = CLEANED_PATH
-    dst = CLEANED_PATH
+    dst = CHECKED_PATH
     counter = SplitByCompleteness(src, dst)
     counter()

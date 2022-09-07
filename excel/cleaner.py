@@ -21,9 +21,10 @@ class TableCleaner:
 
     def __call__(self) -> None:
         for subject in self.loop_subjects():
-            for table in self.loop_tables(subject):
-                df = self.clean(subject, table)
-                self.save(df, subject, table)
+            for dim in ['2d', '3d']:
+                for table in self.loop_tables(subject, dim):
+                    df = self.clean(subject, dim, table)
+                    self.save(df, subject, dim, table)
 
     def loop_subjects(self) -> str:
         """Loop over subjects"""
@@ -31,16 +32,16 @@ class TableCleaner:
             logger.info(f'-> {subject}')
             yield subject
 
-    def loop_tables(self, subject: str) -> str:
+    def loop_tables(self, subject: str, dim: str) -> str:
         """Loop over tables"""
-        for table in os.listdir(os.path.join(self.src, subject)):
-            logger.info(f'-> {table}')
-            yield table
+        if os.path.exists(os.path.join(self.src, subject, dim)):
+            for table in os.listdir(os.path.join(self.src, subject, dim)):
+                logger.info(f'-> {table}')
+                yield table
 
-    def clean(self, subject: str, table: str) -> pd.DataFrame:
+    def clean(self, subject: str, dim: str, table: str) -> pd.DataFrame:
         """Clean table"""
-        subject_path = os.path.join(self.src, subject)
-        table_path = os.path.join(subject_path, table)
+        table_path = os.path.join(self.src, subject, dim, table)
         df = pd.read_excel(table_path, index_col=0)
         for x in ['nan ', 'nan', 'NaN', 'NaN ']:
             df = df.replace(x, np.nan)
@@ -51,9 +52,9 @@ class TableCleaner:
         df = df.reset_index(drop=True)
         return df
 
-    def save(self, df: pd.DataFrame, subject: str, table: str) -> None:
+    def save(self, df: pd.DataFrame, subject: str, dim: str, table: str) -> None:
         """Save table"""
-        export_path = os.path.join(self.dst, subject, table)
+        export_path = os.path.join(self.dst, subject, dim, table)
         os.makedirs(os.path.dirname(export_path), exist_ok=True)
         df.to_excel(export_path)
 

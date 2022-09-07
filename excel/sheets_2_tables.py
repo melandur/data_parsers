@@ -6,7 +6,7 @@ import pandas as pd
 from loguru import logger
 from openpyxl import load_workbook
 
-from excel.path_master import EXTRACTED_PATH, TABLE_WISE_PATH
+from excel.path_master import EXTRACTED_PATH, CASE_WISE_PATH
 
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
@@ -322,13 +322,13 @@ class ExtractSheets2Tables:
                 raise ValueError(f'Data is not 2d or 3d -> {self.subject_name}')
             file_path = os.path.join(self.dst, self.subject_name, d_name, f'{self.subject_name}_{self.data_name}')
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            df.to_csv(f'{file_path}.csv', index=False)
+            df.to_excel(f'{file_path}.xlsx', index=False)
 
 
 if __name__ == '__main__':
 
     sheets_2_tables = ExtractSheets2Tables(
-        src=EXTRACTED_PATH,
-        dst=TABLE_WISE_PATH,
+        src=os.path.join(EXTRACTED_PATH, 'part_4'),
+        dst=CASE_WISE_PATH,
     )
     sheets_2_tables()
