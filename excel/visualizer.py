@@ -94,5 +94,5 @@ if __name__ == '__main__':
     src = '/home/melandur/Data/Myocarditis/csv_preprocessing/raw/table_wise_column'
     dst = '/home/melandur/Data/Myocarditis/plotly/'
     # vtw = VisualizeTableWise(src, dst)
-    vmt = Visualize(src, dst)
+    vmt = VisualizeTableWise(src, dst)
     vmt()

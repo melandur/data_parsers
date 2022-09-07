@@ -332,5 +332,3 @@ if __name__ == '__main__':
         dst=TABLE_WISE_PATH,
     )
     sheets_2_tables()
-
-

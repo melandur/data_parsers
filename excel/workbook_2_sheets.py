@@ -21,10 +21,10 @@ class ExtractWorkbook2Sheets:
 
     def __call__(self) -> None:
         """Extract workbook to sheets"""
-        total_memory = psutil.virtual_memory().total / (1024 ** 3)  # in GB
+        total_memory = psutil.virtual_memory().total / (1024**3)  # in GB
         if total_memory < 30:  # warn if memory is less than 32GB
             raise MemoryError('Not enough memory to extract workbook to sheets, 32 GB of RAM is required')
-        logger.info(f'Extract workbook to sheets is running...')
+        logger.info('Extract workbook to sheets is running...')
         if not self.src_file.endswith('.xlsx') and not os.path.exists(self.src_file):
             raise ValueError(f'{self.src_file} is not a valid ".xlsx" file')
         self.extract_sheets()
@@ -67,11 +67,12 @@ class ExtractWorkbook2Sheets:
         logger.info(f'Ignore sheet -> {sheet_name}')
         return False
 
-    def load_file(self) -> openpyxl.Workbook:
+    def load_file(self) -> openpyxl.Workbook or None:
         """Load file"""
         if not self.src_file.startswith('.'):  # avoid loading hidden tmp file
             self.subject_name = self.src_file.strip('.xlsx')
             return load_workbook(self.src_file, read_only=False, data_only=True, keep_vba=False, keep_links=False)
+        return None
 
 
 if __name__ == '__main__':

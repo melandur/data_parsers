@@ -19,7 +19,8 @@ class MergeCasesOfPolarMaps:
 
     def __call__(self) -> None:
         subjects = os.listdir(self.src)
-        tables = os.listdir(os.path.join(self.src, subjects[0]))
+        subject_path = os.path.join(self.src, subjects[0])
+        tables = os.listdir(subject_path)
         tables = ['_'.join(table.split('_')[1:]) for table in tables]
 
         for table in tables:
