@@ -42,7 +42,7 @@ class TableCleaner:
     def clean(self, subject: str, dim: str, table: str) -> pd.DataFrame:
         """Clean table"""
         table_path = os.path.join(self.src, subject, dim, table)
-        df = pd.read_excel(table_path, index_col=0)
+        df = pd.read_excel(table_path)
         for x in ['nan ', 'nan', 'NaN', 'NaN ']:
             df = df.replace(x, np.nan)
         if 'peak_strain_rad_%' in df:
@@ -56,7 +56,7 @@ class TableCleaner:
         """Save table"""
         export_path = os.path.join(self.dst, subject, dim, table)
         os.makedirs(os.path.dirname(export_path), exist_ok=True)
-        df.to_excel(export_path)
+        df.to_excel(export_path, index=False)
 
 
 if __name__ == '__main__':
