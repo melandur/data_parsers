@@ -3,6 +3,7 @@ import os
 DATA_PATH = '/home/melandur/Data/Myocarditis/csv/train/'
 
 # Prepare data
+RAW_PATH = os.path.join(DATA_PATH, '0_raw')
 EXTRACTED_PATH = os.path.join(DATA_PATH, '1_extracted')
 CASE_WISE_PATH = os.path.join(DATA_PATH, '2_case_wise')
 CLEANED_PATH = os.path.join(DATA_PATH, '3_cleaned')

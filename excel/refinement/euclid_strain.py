@@ -19,15 +19,15 @@ class MergeSegments:
         self.dst = dst
         self.memory = {}
 
-    def __call__(self, name) -> None:
-        self.aggregate_data_frames(name)
-        self.merge_column_wise(name)
-        self.merge_row_wise(name)
+    def __call__(self) -> None:
+        self.aggregate_data_frames()
+        self.merge_column_wise()
+        self.merge_row_wise()
 
-    def aggregate_data_frames(self, name: str) -> None:
+    def aggregate_data_frames(self) -> None:
         for root, _, files in os.walk(self.src):
             for file in files:
-                if file.endswith('.xlsx') and name in file:
+                if file.endswith('.xlsx'):
                     file_path = os.path.join(root, file)
                     logger.info(f'-> {file}')
                     df = pd.read_excel(file_path)
@@ -38,15 +38,16 @@ class MergeSegments:
         """Merge columns of data frames"""
         columns = self.memory[list(self.memory.keys())[0]].columns  # get column names of first subject
         for column in columns:
-            df = pd.DataFrame(columns=self.memory.keys())
-            for subject in self.memory:
-                df[subject] = self.memory[subject][column]
+            if not 'AHA Segment' in column:
+                df = pd.DataFrame(columns=self.memory.keys())
+                for subject in self.memory:
+                    df[subject] = self.memory[subject][column]
 
-            header = df.columns.tolist()
-            header = [f'case_{x.split("_")[0]}' for x in header]
-            df.columns = header
-            df.rename(index={0: 'global'}, inplace=True)
-            self.save(df, f'{table_name}_{column}')
+                header = df.columns.tolist()
+                header = [f'case_{x.split("_")[0]}' for x in header]
+                df.columns = header
+                df.rename(index={0: 'global'}, inplace=True)
+                self.save(df, f'{table_name}_{column}')
 
     def merge_row_wise(self, table_name) -> None:
         """Merge columns of data frames"""
@@ -65,8 +66,10 @@ class MergeSegments:
             df.rename(index={0: 'global'}, inplace=True)
             if column == 0:
                 column = 'global'
-            df = df.iloc[1:]
-            self.save(df, f'aha_{table_name}_{column}')
+            df = df.iloc[1:]  # remove global row
+            df_zscore = (df - df.mean()) / df.std()
+            # df_zscore = df
+            self.save(df_zscore, f'aha_{table_name}_{column}')
 
     def save(self, df: pd.DataFrame, name: str) -> None:
         name = name.replace('/', '-')
@@ -76,7 +79,7 @@ class MergeSegments:
 
 
 if __name__ == '__main__':
-    src = '/home/melandur/Data/Myocarditis/csv/train/newly'
-    dst = MERGED_PATH
+    src = MERGED_PATH
+    dst = os.path.join(CONDENSED_PATH, 'aha')
     tm = MergeSegments(src, dst)
-    tm('longit_strain_rate')
+    tm()

@@ -328,7 +328,7 @@ class ExtractSheets2Tables:
 if __name__ == '__main__':
 
     sheets_2_tables = ExtractSheets2Tables(
-        src=os.path.join(EXTRACTED_PATH, 'part_4'),
+        src=EXTRACTED_PATH,
         dst=CASE_WISE_PATH,
     )
     sheets_2_tables()

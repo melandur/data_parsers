@@ -6,7 +6,7 @@ import psutil
 from loguru import logger
 from openpyxl import load_workbook
 
-from excel.path_master import EXTRACTED_PATH
+from excel.path_master import EXTRACTED_PATH, RAW_PATH
 
 
 class ExtractWorkbook2Sheets:
@@ -78,7 +78,7 @@ class ExtractWorkbook2Sheets:
 if __name__ == '__main__':
 
     workbook_2_sheets = ExtractWorkbook2Sheets(
-        src_file='/home/melandur/tmp/a. Myocarditis_strain_Sophie#1.xlsx',
+        src_file=os.path.join(RAW_PATH, 'D. Strain_v3b_FlamBer_61-120.xlsx'),
         dst_folder=EXTRACTED_PATH,
     )
     workbook_2_sheets()
