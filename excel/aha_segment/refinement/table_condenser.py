@@ -36,7 +36,7 @@ class TableCondenser:
         """Loop over tables"""
         if os.path.exists(os.path.join(self.src, subject, dim)):
             for table in os.listdir(os.path.join(self.src, subject, dim)):
-                if 'strain_rate' in table:
+                if 'strain_rate' in table:  # only keep tables with strain rate
                     logger.info(f'-> {table}')
                     yield table
 
@@ -46,7 +46,7 @@ class TableCondenser:
         df = pd.read_excel(table_path)
 
         if not df.empty:
-            df = df[[col for col in df.columns if 'sample' in col or 'AHA' in col]]
+            df = df[[col for col in df.columns if 'sample' in col or 'AHA' in col]]  # keep only columns of interest
             return df
         return None
 

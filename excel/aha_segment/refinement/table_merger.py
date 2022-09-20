@@ -24,6 +24,7 @@ class MergeSegments:
         self.merge_column_wise(name)
         self.merge_row_wise(name)
 
+
     def aggregate_data_frames(self, name: str) -> None:
         """Aggregate data frames"""
         self.memory = {}
@@ -43,7 +44,8 @@ class MergeSegments:
             if not 'AHA Segment' in column:
                 df = pd.DataFrame(columns=self.memory.keys())
                 for subject in self.memory:
-                    df[subject] = self.memory[subject][column]
+                    x = self.memory[subject]
+                    df[subject] = x[column]
 
                 header = df.columns.tolist()
                 header = [f'case_{x.split("_")[0]}' for x in header]

@@ -46,16 +46,16 @@ class ExtractSheets2Tables:
             for row in self.loop_row():
                 self.detect_table_name(row)
                 if self.mode == 'aha_diagram':
-                    df = self.extract_aha_diagram_2d(row)
+                    df = self.extract_aha_diagram(row)
                     self.save(df)
                 if self.mode == 'global_roi':
-                    df = self.extract_global_roi_2d(row)
+                    df = self.extract_global_roi(row)
                     self.save(df)
                 if self.mode == 'aha_polarmap':
-                    df = self.extract_aha_polarmap_2d(row)
+                    df = self.extract_aha_polarmap(row)
                     self.save(df)
                 if self.mode == 'roi_polarmap':
-                    df = self.extract_roi_polarmap_2d(row)
+                    df = self.extract_roi_polarmap(row)
                     self.save(df)
                 if self.mode == 'volume':
                     df = self.extract_volume_3d(row)
@@ -84,7 +84,7 @@ class ExtractSheets2Tables:
 
     def loop_row(self) -> range:
         """Iterate over rows and return certain row numbers"""
-        start_row = 229
+        start_row = 229  # start row of the first table
         max_rows = self.sheet.max_row
         self.count = 0
         for row_index in range(start_row, max_rows - 1):
@@ -147,7 +147,7 @@ class ExtractSheets2Tables:
                     else:
                         raise ValueError('axis is not defined')
 
-    def _table_end_finder(self, start_row: int, column: int, criteria: str or None = None) -> int:
+    def _table_row_end_finder(self, start_row: int, column: int, criteria: str or None = None) -> int:
         """Count relative to the start point the number of row until the table ends"""
         for row in range(start_row + 5, start_row + 400, 1):  # 400 is the maximum number of rows to search
             if self.sheet.cell(row=row, column=column).value is criteria:
@@ -156,10 +156,10 @@ class ExtractSheets2Tables:
             f'End of table search range reached, super long table or wrong end criteria -> {start_row}'
         )
 
-    def extract_roi_polarmap_2d(self, row: int) -> pd.DataFrame:
-        """Extract roi polarmap 2d"""
+    def extract_roi_polarmap(self, row: int) -> pd.DataFrame:
+        """Extract roi polarmap"""
         logger.info(f'{row} {self.mode} {self.data_name}')
-        row_end = self._table_end_finder(row, 2, None)
+        row_end = self._table_row_end_finder(row, 2, None)
         df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:S')
         df.columns = [
             'slices',
@@ -183,10 +183,10 @@ class ExtractSheets2Tables:
         ]
         return df
 
-    def extract_aha_polarmap_2d(self, row: int) -> pd.DataFrame:
-        """Extract aha polarmap 2d"""
+    def extract_aha_polarmap(self, row: int) -> pd.DataFrame:
+        """Extract aha polarmap"""
         logger.info(f'{row} {self.mode} {self.data_name}')
-        row_end = self._table_end_finder(row, 2, None)
+        row_end = self._table_row_end_finder(row, 2, None)
         df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:R')
         if 'short' in self.data_name:
             axis = 'circumf'
@@ -219,9 +219,10 @@ class ExtractSheets2Tables:
         return df
 
     @staticmethod
-    def rearrange_time_helper_2d(df: pd.DataFrame) -> pd.DataFrame or None:
+    def rearrange_time_helper(df: pd.DataFrame) -> pd.DataFrame or None:
         """Rearrange time columns for 2d"""
-        header = df.head().columns.values.tolist()
+        df = df.iloc[:, :-1]  # remove last column
+        header = df.columns.tolist()
         counter = 0
         for idx, name in enumerate(header):
             if 'unnamed' in name.lower() or 'ms' in name.lower():
@@ -248,11 +249,11 @@ class ExtractSheets2Tables:
         return None
 
     @staticmethod
-    def rearrange_time_helper_3d(df: pd.DataFrame) -> pd.DataFrame or None:
-        """Rearrange time columns for 3d"""
+    def rearrange_time_volume(df: pd.DataFrame) -> pd.DataFrame or None:
+        """Rearrange time columns for 3d volumes"""
+        df = df.iloc[:, :-1]  # remove last column
         header = df.head().columns.values.tolist()
         counter = 0
-
         for idx, name in enumerate(header):
             if 'unnamed' in name.lower() or 'ms' in name.lower():
                 header[idx] = f'sample_{counter}'
@@ -278,38 +279,48 @@ class ExtractSheets2Tables:
             return df
         return None
 
-    def extract_aha_diagram_2d(self, row: int) -> pd.DataFrame or None:
+    def _last_column_is_empty(self, df: pd.DataFrame) -> bool:
+        """Check if the last column is empty"""
+        last_column = df.columns[-1]
+        if df[last_column].isna().sum() == len(df):
+            return True
+        return False
+
+    def extract_aha_diagram(self, row: int) -> pd.DataFrame or None:
         """Extract aha diagram 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
-        row_end = self._table_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AA')
-        if df.empty:
-            logger.warning(f'Empty dataframe for {self.subject_name} {self.mode} {self.data_name}')
-            return None
-        df = self.rearrange_time_helper_2d(df)
-        return df
+        row_end = self._table_row_end_finder(row, 2, None)
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
+        if not df.empty:
+            if self._last_column_is_empty(df):
+                df = self.rearrange_time_helper(df)
+                return df
+        logger.warning(f'Empty/invalid dataframe for {self.subject_name} {self.mode} {self.data_name}')
+        return None
 
-    def extract_global_roi_2d(self, row: int) -> pd.DataFrame or None:
+    def extract_global_roi(self, row: int) -> pd.DataFrame or None:
         """Extract global roi 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
-        row_end = self._table_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
-        if df.empty:
-            logger.warning(f'Empty dataframe for {self.subject_name} {self.mode} {self.data_name}')
-            return None
-        df = self.rearrange_time_helper_2d(df)
-        return df
+        row_end = self._table_row_end_finder(row, 2, None)
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AC')
+        if not df.empty:
+            if self._last_column_is_empty(df):
+                df = self.rearrange_time_helper(df)
+                return df
+        logger.warning(f'Empty/invalid dataframe for {self.subject_name} {self.mode} {self.data_name}')
+        return None
 
     def extract_volume_3d(self, row: int) -> pd.DataFrame or None:
         """Extract volume 3d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
-        row_end = self._table_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AA')
-        if df.empty:
-            logger.warning(f'Empty dataframe for {self.subject_name} {self.mode} {self.data_name}')
-            return None
-        df = self.rearrange_time_helper_3d(df)
-        return df
+        row_end = self._table_row_end_finder(row, 2, None)
+        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
+        if not df.empty:
+            if self._last_column_is_empty(df):
+                df = self.rearrange_time_volume(df)
+                return df
+        logger.warning(f'Empty/invalid dataframe for {self.subject_name} {self.mode} {self.data_name}')
+        return None
 
     def save(self, df: pd.DataFrame) -> None:
         """Save dataframe to excel"""

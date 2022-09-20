@@ -36,7 +36,6 @@ class TableCleaner:
         """Loop over tables"""
         if os.path.exists(os.path.join(self.src, subject, dim)):
             for table in os.listdir(os.path.join(self.src, subject, dim)):
-                logger.info(f'-> {table}')
                 yield table
 
     def clean(self, subject: str, dim: str, table: str) -> pd.DataFrame:
@@ -57,6 +56,7 @@ class TableCleaner:
         export_path = os.path.join(self.dst, subject, dim, table)
         os.makedirs(os.path.dirname(export_path), exist_ok=True)
         df.to_excel(export_path, index=False)
+        logger.info(f'-> {table}')
 
 
 if __name__ == '__main__':
