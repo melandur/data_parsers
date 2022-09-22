@@ -24,7 +24,6 @@ class MergeSegments:
         self.merge_column_wise(name)
         self.merge_row_wise(name)
 
-
     def aggregate_data_frames(self, name: str) -> None:
         """Aggregate data frames"""
         self.memory = {}
@@ -85,5 +84,7 @@ if __name__ == '__main__':
     src = CONDENSED_PATH
     dst = MERGED_PATH
     tm = MergeSegments(src, dst)
-    for name in ['longit_strain_rate', 'radial_strain_rate', 'circumf_strain_rate']:
+    for name in ['longit_strain_rate', 'radial_strain_rate', 'circumf_strain_rate', 'longit_velocity',
+                 'radial_velocity', 'circumf_velocity', 'longit_acceleration', 'radial_acceleration',
+                 'circumf_acceleration']:
         tm(name)

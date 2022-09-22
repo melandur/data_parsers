@@ -36,9 +36,8 @@ class TableCondenser:
         """Loop over tables"""
         if os.path.exists(os.path.join(self.src, subject, dim)):
             for table in os.listdir(os.path.join(self.src, subject, dim)):
-                if 'strain_rate' in table:  # only keep tables with strain rate
-                    logger.info(f'-> {table}')
-                    yield table
+                logger.info(f'-> {table}')
+                yield table
 
     def clean(self, subject: str, dim: str, table: str) -> pd.DataFrame or None:
         """Clean table"""
