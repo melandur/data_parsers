@@ -54,10 +54,11 @@ class CalculateAcceleration:
         for col in df.columns:
             if 'sample' in col:
                 i = int(col.split('_')[-1])  # get sample number
-                if i >= 22:  # last sample has no acceleration
+                if i >= 23:  # last sample has no acceleration
                     continue
-                delta_v = df[f'sample_{i + 2}'] - df[f'sample_{i + 1}']
-                delta_t = df[f'time_{i + 2}'] - df[f'time_{i + 1}']
+                delta_v = df[f'sample_{i + 2}'] - df[f'sample_{i + 1}']  # mm/s
+                delta_t = df[f'time_{i + 2}'] - df[f'time_{i + 1}']  # ms
+                delta_t = delta_t / 1000  # convert ms to s
                 df_acc[f'sample_{i}'] = delta_v / delta_t
         return df_acc
 

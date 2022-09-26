@@ -1,6 +1,6 @@
 import os
 
-DATA_PATH = '/home/melandur/Data/Myocarditis/csv/test/'
+DATA_PATH = '/home/melandur/Data/Myocarditis/csv/train/'
 
 # Prepare data
 RAW_PATH = os.path.join(DATA_PATH, '0_raw')
