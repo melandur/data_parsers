@@ -20,15 +20,15 @@ Tags are not defined yet.
 ## Excel
 
 #### 1. Pre-processing (to create basic data structure)
-- workbook_2_sheets.py
-- Sheets_2_tables.py
-- cleaner.py
-- checks.py
+- workbook_2_sheets.py  -> extract sheets from workbook and save as separate files
+- sheets_2_tables.py -> extract tables from sheets and save as separate files
+- cleaner.py -> clean up tables and save in a new folder
+- checks.py  -> check if all tables complete and save in a new folder
 
 #### 2. Refinement (more specific data arrangement for faster plotting)
-- calculate_accelerations.py
-- table_condenser.py
-- table_merger.py
+- calculate_accelerations.py -> calculate accelerations from raw data and save in a new folder
+- table_condenser.py -> focus on specific data and save in a same folder as acceleration results
+- table_merger.py -> merge tables and save in a new folder
 
 #### 3. Analyze (ce plots)
 - use jupyter notebook
