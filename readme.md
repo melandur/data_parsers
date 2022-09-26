@@ -13,13 +13,22 @@
 
 ## Dicom
 
-TBD
+Tag based dicom file converter. 
+Tags are not defined yet.
 
 
 ## Excel
 
-#### Pre-processing order
-- Workbook_2_sheets
-- Sheets_2_tables
-- Cleaner
-- Checks
+#### 1. Pre-processing (to create basic data structure)
+- workbook_2_sheets.py
+- Sheets_2_tables.py
+- cleaner.py
+- checks.py
+
+#### 2. Refinement (more specific data arrangement for faster plotting)
+- calculate_accelerations.py
+- table_condenser.py
+- table_merger.py
+
+#### 3. Analyze (ce plots)
+- use jupyter notebook
