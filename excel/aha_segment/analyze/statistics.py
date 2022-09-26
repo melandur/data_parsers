@@ -19,8 +19,6 @@ from scipy.stats import (
 
 
 # Normality test (check if data has a Gaussian distribution)
-
-
 def shapiro_test(data):
     """
     Shapiro-Wilk Test

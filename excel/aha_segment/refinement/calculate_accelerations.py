@@ -11,6 +11,7 @@ pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
 
 
+# TODO: Need to check Jerk as well
 class CalculateAcceleration:
     """Narrows down the table to the columns of interest"""
 
@@ -21,7 +22,11 @@ class CalculateAcceleration:
 
     def __call__(self) -> None:
         for subject in self.loop_subjects():
-            for name in ['velocity', 'rate']:
+            for name in ['strain_rate']:
+                for table in self.loop_tables(subject, name):
+                    df = self.get_acceleration(subject, table)
+                    self.save(df, subject, name, table)
+            for name in ['velocity']:
                 for table in self.loop_tables(subject, name):
                     df = self.get_acceleration(subject, table)
                     self.save(df, subject, name, table)
@@ -48,18 +53,22 @@ class CalculateAcceleration:
         df_acc['AHA Segment'] = df['AHA Segment']
         for col in df.columns:
             if 'sample' in col:
-                i = int(col.split('_')[-1])
-                if i == 24:  # last sample has no acceleration
+                i = int(col.split('_')[-1])  # get sample number
+                if i >= 22:  # last sample has no acceleration
                     continue
-                delta_v = df[f'sample_{i}'] - df[f'sample_{i + 1}']
-                delta_t = df[f'time_{i}'] - df[f'time_{i + 1}']
+                delta_v = df[f'sample_{i + 1}'] - df[f'sample_{i + 2}']
+                delta_t = df[f'time_{i + 1}'] - df[f'time_{i + 2}']
                 df_acc[f'sample_{i}'] = delta_v / delta_t
         return df_acc
 
     def save(self, df: pd.DataFrame, subject: str, name: str, table: str) -> None:
         """Save table"""
         if df is not None:
-            table = table.replace(name, 'acceleration')
+            if name == 'velocity':
+                tag = 'acceleration'
+            else:
+                tag = 'strain-acc'
+            table = table.replace(name, tag)
             table = table.replace('-s', '-s^2')
             export_path = os.path.join(self.dst, subject, '3d', table)
             os.makedirs(os.path.dirname(export_path), exist_ok=True)

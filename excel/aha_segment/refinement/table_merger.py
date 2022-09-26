@@ -86,5 +86,6 @@ if __name__ == '__main__':
     tm = MergeSegments(src, dst)
     for name in ['longit_strain_rate', 'radial_strain_rate', 'circumf_strain_rate', 'longit_velocity',
                  'radial_velocity', 'circumf_velocity', 'longit_acceleration', 'radial_acceleration',
-                 'circumf_acceleration']:
+                 'circumf_acceleration', 'longit_strain-acc', 'radial_strain-acc',
+                 'circumf_strain-acc']:
         tm(name)

@@ -10,8 +10,6 @@ dicom2nifti = "^2.4.2"
 pydicom = "^2.3.0"
 SimpleITK = "2.0.2"
 loguru = "^0.6.0"
-black = "^22.6.0"
-isort = "^5.10.1"
 nibabel = "^4.0.1"
 openpyxl = "^3.0.10"
 xlrd = "1.2.0"
@@ -25,8 +23,12 @@ glue-vispy-viewers = "^1.0.5"
 glue-plotly = "^0.3"
 specviz = "^0.8"
 pylint = "^2.15.0"
+jupyter = "^1.0.0"
+notebook = "^6.4.12"
 
 [tool.poetry.dev-dependencies]
+black = "^22.6.0"
+isort = "^5.10.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

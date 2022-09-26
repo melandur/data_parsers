@@ -7,6 +7,8 @@ from excel.path_master import CLEANED_PATH, CHECKED_PATH
 
 
 class SplitByCompleteness:
+    """Sort files by completeness"""
+
     def __init__(self, src: str, dst: str) -> None:
         self.src = src
         self.dst = dst
@@ -19,7 +21,6 @@ class SplitByCompleteness:
         for case in self.get_cases():
             self.count_files(case)
             self.memory[case] = self.count
-            logger.warning(self.count)
         self.divide_cases()
         self.move_files()
 

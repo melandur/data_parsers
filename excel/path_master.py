@@ -10,10 +10,11 @@ CLEANED_PATH = os.path.join(DATA_PATH, '3_cleaned')
 CHECKED_PATH = os.path.join(DATA_PATH, '4_checked')
 TABLE_WISE_PATH = os.path.join(DATA_PATH, '5_table_wise')
 
-# Analyze data
+# Refine data
 CONDENSED_PATH = os.path.join(DATA_PATH, '6_condensed')
 MERGED_PATH = os.path.join(DATA_PATH, '7_merged')
 AHA_SEGMENT_PATH = os.path.join(DATA_PATH, '8_aha_segment')
 
+# Analyze data
 ANALYZE_PATH = os.path.join(DATA_PATH, '16_analyze')
 TMP_PATH = os.path.join(DATA_PATH, '17_tmp')
