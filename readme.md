@@ -6,18 +6,23 @@
 
 
 ## Quick start
-
-    python = 3.9
+    install anaconda or miniconda
+    conda create -n <project_name> python=3.9
+    pip install poetry
+    conda activate <project_name>
     cd /path/to/this/repo
     poetry install
 
 ## Dicom
-
 Tag based dicom file converter. 
-Tags are not defined yet.
-
+Tags are not defined yet. Not used yet.
 
 ## Excel
+
+### Nice to know
+- path_master.py -> holds src and export folder definitions
+- data in test folder -> healthy (myocarditis negative, not necessary really healthy)
+- data in train folder -> myocarditis positive
 
 #### 1. Pre-processing (to create basic data structure)
 - workbook_2_sheets.py  -> extract sheets from workbook and save as separate files
@@ -31,4 +36,4 @@ Tags are not defined yet.
 - table_merger.py -> merge tables and save in a new folder
 
 #### 3. Analyze (ce plots)
-- use jupyter notebook
+- use jupyter notebook (load the data into the RAM for faster plotting iterations)
