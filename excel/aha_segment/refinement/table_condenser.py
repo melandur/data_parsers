@@ -20,6 +20,7 @@ class TableCondenser:
         self.memory = {}
 
     def __call__(self) -> None:
+        # TODO: why only 3d?
         dim = '3d'
         for subject in self.loop_subjects():
             for table in self.loop_tables(subject, dim):

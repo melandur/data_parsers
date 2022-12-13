@@ -13,7 +13,7 @@ pd.set_option('display.max_colwidth', None)
 
 
 class TableCleaner:
-    """Intra-/Extrapolate NaN rows or delete them"""
+    """Inter-/Extrapolate NaN rows or delete them"""
 
     def __init__(self, src: str, dst: str):
         self.src = src
@@ -42,11 +42,16 @@ class TableCleaner:
         """Clean table"""
         table_path = os.path.join(self.src, subject, dim, table)
         df = pd.read_excel(table_path)
+
+        # Standardise missing entries into np.nan
         for x in ['nan ', 'nan', 'NaN', 'NaN ']:
             df = df.replace(x, np.nan)
         if 'peak_strain_rad_%' in df:
             if any(df['peak_strain_rad_%'] == '--'):
-                df['peak_strain_rad_%'] = df['peak_strain_rad_%'].replace('--', np.NAN)
+                df['peak_strain_rad_%'] = df['peak_strain_rad_%'].replace('--', np.nan)
+
+        # TODO: add inter- or extrapolation functionalities
+        # current version drops all rows/cols containing at least one NaN value
         df.dropna(inplace=True)
         df = df.reset_index(drop=True)
         return df
