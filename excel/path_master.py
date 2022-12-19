@@ -1,11 +1,11 @@
 import os
 
-DATA_PATH = '/home/sebalzer/Documents/Mike_init/csv/train'
+DATA_PATH = '/home/sebalzer/Documents/Mike_init/tests/train'
 
 # Prepare data
 RAW_PATH = os.path.join(DATA_PATH, '0_raw')
 # Path suffix for testing purposes
-SUFFIX = '_experimental'
+SUFFIX = ''
 EXTRACTED_PATH = os.path.join(DATA_PATH, '1_extracted' + SUFFIX)
 CASE_WISE_PATH = os.path.join(DATA_PATH, '2_case_wise' + SUFFIX)
 CLEANED_PATH = os.path.join(DATA_PATH, '3_cleaned' + SUFFIX)

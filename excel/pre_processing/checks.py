@@ -3,7 +3,8 @@ import shutil
 
 from loguru import logger
 import pandas as pd
-from excel.path_master import CLEANED_PATH, CHECKED_PATH
+
+# from excel.path_master import CLEANED_PATH, CHECKED_PATH
 
 
 class SplitByCompleteness:
@@ -40,6 +41,8 @@ class SplitByCompleteness:
                     df = pd.read_excel(os.path.join(root, file))
                     if not df.iloc[:, 5].isnull().all():  # checks column 5 for NaN
                         self.count += 1
+                    # else:
+                    #     print(f"Col 5 NaN detected in {file}")
 
     def divide_cases(self) -> None:
         """Divide cases into complete and missing"""
@@ -67,7 +70,9 @@ class SplitByCompleteness:
 
 
 if __name__ == '__main__':
-    src = CLEANED_PATH
-    dst = CHECKED_PATH
+    # src = CLEANED_PATH
+    # dst = CHECKED_PATH
+    src = '/home/sebalzer/Documents/Mike_init/tests/train/3_cleaned'
+    dst = '/home/sebalzer/Documents/Mike_init/tests/train/4_checked'
     counter = SplitByCompleteness(src, dst)
     counter()

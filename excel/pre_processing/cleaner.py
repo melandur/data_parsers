@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from excel.path_master import CASE_WISE_PATH, CLEANED_PATH
+# from excel.path_master import CASE_WISE_PATH, CLEANED_PATH
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
@@ -52,6 +52,9 @@ class TableCleaner:
 
         # TODO: add inter- or extrapolation functionalities
         # current version drops all rows/cols containing at least one NaN value
+        # might want to introduce flag to show whether any NaN values were present
+        # or how much data was removed
+        # nans = df.isna().sum()
         df.dropna(inplace=True)
         df = df.reset_index(drop=True)
         return df
@@ -65,7 +68,9 @@ class TableCleaner:
 
 
 if __name__ == '__main__':
-    src = CASE_WISE_PATH
-    dst = CLEANED_PATH
+    # src = CASE_WISE_PATH
+    # dst = CLEANED_PATH
+    src = '/home/sebalzer/Documents/Mike_init/tests/train/2_case_wise'
+    dst = '/home/sebalzer/Documents/Mike_init/tests/train/3_cleaned'
     tc = TableCleaner(src, dst)
     tc()

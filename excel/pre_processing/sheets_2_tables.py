@@ -6,7 +6,7 @@ import pandas as pd
 from loguru import logger
 from openpyxl import load_workbook
 
-from excel.path_master import EXTRACTED_PATH, CASE_WISE_PATH
+# from excel.path_master import EXTRACTED_PATH, CASE_WISE_PATH
 
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
@@ -88,6 +88,7 @@ class ExtractSheets2Tables:
         max_rows = self.sheet.max_row
         self.count = 0
         for row_index in range(start_row, max_rows - 1):
+            # considers only left ventricle data
             if 'left' in f'{self.sheet.cell(row=row_index, column=2).value}'.lower():
                 yield row_index
 
@@ -337,9 +338,10 @@ class ExtractSheets2Tables:
 
 
 if __name__ == '__main__':
-
     sheets_2_tables = ExtractSheets2Tables(
-        src=EXTRACTED_PATH,
-        dst=CASE_WISE_PATH,
+        # src=EXTRACTED_PATH,
+        # dst=CASE_WISE_PATH,
+        src='/home/sebalzer/Documents/Mike_init/tests/train/1_extracted',
+        dst='/home/sebalzer/Documents/Mike_init/tests/train/2_case_wise'
     )
     sheets_2_tables()
