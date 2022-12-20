@@ -56,6 +56,7 @@ class MergeSegments:
 
     def merge_row_wise(self, dim:str, table_name) -> None:
         """Merge columns of data frames"""
+        # print(self.memory[list(self.memory.keys())[0]])
         tmp_df = self.memory[list(self.memory.keys())[0]]
         tmp_df = tmp_df.transpose()
         columns = tmp_df.columns.tolist()
@@ -65,6 +66,8 @@ class MergeSegments:
 
             for subject in self.memory:
                 x = self.memory[subject].transpose()
+                # print(x)      
+                # print(column)
                 df[subject] = x[column]
 
             header = df.columns.tolist()
@@ -88,8 +91,8 @@ if __name__ == '__main__':
     dst = '/home/sebalzer/Documents/Mike_init/tests/train/7_merged'
     tm = MergeSegments(src, dst)
     
-    dims = ['2d', '3d']
-    dims = ['2d']
+    # dims = ['2d', '3d']
+    dims = ['3d']
     for dim in dims:
         for name in ['longit_strain_rate', 'radial_strain_rate', 'circumf_strain_rate', 'longit_velocity',
                     'radial_velocity', 'circumf_velocity', 'longit_acceleration', 'radial_acceleration',
