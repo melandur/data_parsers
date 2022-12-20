@@ -1,0 +1,7 @@
+defaults:
+  - dataset: train
+  - _self_
+
+# add global default parameter values below
+# dataset:
+#   dim: '2d'
