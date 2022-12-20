@@ -81,3 +81,5 @@ __pycache__
 env/
 
 .vscode/
+
+excel/aha_segment/analyze/.ipynb_checkpoints/

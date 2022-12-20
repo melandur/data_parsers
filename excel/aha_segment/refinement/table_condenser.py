@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from loguru import logger
 
-from excel.path_master import CHECKED_PATH, CONDENSED_PATH
+# from excel.path_master import CHECKED_PATH, CONDENSED_PATH
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
@@ -20,12 +20,13 @@ class TableCondenser:
         self.memory = {}
 
     def __call__(self) -> None:
-        # TODO: why only 3d?
-        dim = '3d'
-        for subject in self.loop_subjects():
-            for table in self.loop_tables(subject, dim):
-                df = self.clean(subject, dim, table)
-                self.save(df, subject, dim, table)
+        dims = ['2d', '3d']
+        # dims = ['2d']
+        for dim in dims:
+            for subject in self.loop_subjects():
+                for table in self.loop_tables(subject, dim):
+                    df = self.clean(subject, dim, table)
+                    self.save(df, subject, dim, table)
 
     def loop_subjects(self) -> str:
         """Loop over subjects"""
@@ -37,8 +38,9 @@ class TableCondenser:
         """Loop over tables"""
         if os.path.exists(os.path.join(self.src, subject, dim)):
             for table in os.listdir(os.path.join(self.src, subject, dim)):
-                logger.info(f'-> {table}')
-                yield table
+                if table.endswith('.xlsx'):
+                    logger.info(f'-> {table}')
+                    yield table
 
     def clean(self, subject: str, dim: str, table: str) -> pd.DataFrame or None:
         """Clean table"""
@@ -46,7 +48,9 @@ class TableCondenser:
         df = pd.read_excel(table_path)
 
         if not df.empty:
-            df = df[[col for col in df.columns if 'sample' in col or 'AHA' in col]]  # keep only columns of interest
+            # keep only columns of interest
+            # df = df[[col for col in df.columns if 'sample' in col or 'AHA' in col or 'slice' in col or 'roi' in col]]
+            df = df[[col for col in df.columns if 'sample' in col or 'AHA' in col]]
             return df
         return None
 
@@ -59,7 +63,7 @@ class TableCondenser:
 
 
 if __name__ == '__main__':
-    src = os.path.join(CHECKED_PATH, 'complete')
-    dst = CONDENSED_PATH
+    src = os.path.join('/home/sebalzer/Documents/Mike_init/tests/train/4_checked', 'complete')
+    dst = '/home/sebalzer/Documents/Mike_init/tests/train/6_condensed'
     tc = TableCondenser(src, dst)
     tc()
