@@ -10,9 +10,10 @@ import pandas as pd
 class SplitByCompleteness:
     """Sort files by completeness"""
 
-    def __init__(self, src: str, dst: str) -> None:
+    def __init__(self, src: str, dst: str, save_intermediate: bool=True) -> None:
         self.src = src
         self.dst = dst
+        self.save_intermediate = save_intermediate
         self.count = 0
         self.memory = {}
         self.complete_files = {}

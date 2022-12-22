@@ -4,5 +4,7 @@ defaults:
 
 # add global default parameter values below
 dataset:
-  raw_dir: '/home/sebalzer/Documents/Mike_init/csv/0_raw'
+  # whether to save intermediate steps
+  save_intermediate: True
+  # which data to include in the pre-processing/analysis
   dim: '2d' # '3d', 'both'

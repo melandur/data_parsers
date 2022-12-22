@@ -15,9 +15,10 @@ pd.set_option('display.max_colwidth', None)
 class TableCleaner:
     """Inter-/Extrapolate NaN rows or delete them"""
 
-    def __init__(self, src: str, dst: str):
+    def __init__(self, src: str, dst: str, save_intermediate: bool=True):
         self.src = src
         self.dst = dst
+        self.save_intermediate = save_intermediate
 
     def __call__(self) -> None:
         for subject in self.loop_subjects():

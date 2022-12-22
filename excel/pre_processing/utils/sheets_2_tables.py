@@ -25,9 +25,10 @@ class NestedDefaultDict(defaultdict):
 
 
 class ExtractSheets2Tables:
-    def __init__(self, src: str, dst: str) -> None:
+    def __init__(self, src: str, dst: str, save_intermediate: bool=True) -> None:
         self.src = src
         self.dst = dst
+        self.save_intermediate = save_intermediate
         self.tic = time.time()
         self.wb = None
         self.mode = None

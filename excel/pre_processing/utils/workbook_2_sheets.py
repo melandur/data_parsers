@@ -5,18 +5,21 @@ import openpyxl
 import psutil
 from loguru import logger
 from openpyxl import load_workbook
+from pandas import DataFrame
 
 from excel.path_master import EXTRACTED_PATH, RAW_PATH
 
 
 class ExtractWorkbook2Sheets:
-    def __init__(self, src_file: str, dst_folder: str) -> None:
-        self.src_file = src_file
-        self.dst_folder = dst_folder
+    def __init__(self, src: str, dst: str, save_intermediate: bool=True) -> None:
+        self.src_file = src
+        self.dst_folder = dst
+        self.save_intermediate = save_intermediate
         self.tic = time.time()
         self.wb = None
         self.sheet = None
         self.subject_name = None
+
         os.makedirs(self.dst_folder, exist_ok=True)
 
     def __call__(self) -> None:
@@ -36,12 +39,18 @@ class ExtractWorkbook2Sheets:
     def extract_sheets(self) -> None:
         """Extract sheets"""
         wb = self.load_file()  # load workbook
+
+        if not self.save_intermediate:
+            return DataFrame(wb)
+            
+
         for sheet_name in wb.sheetnames:  # loop through sheets
             if self.check_sheet_name(sheet_name):
                 old_sheet = wb[sheet_name]  # extract sheet
                 new_wb = openpyxl.Workbook()  # create new workbook
                 new_sheet = new_wb.active  # get active sheet
                 clean_sheet_name = self.get_clean_sheet_name(sheet_name)
+                print(clean_sheet_name)
                 new_sheet.title = clean_sheet_name
                 for row in old_sheet:  # copy old sheet to new sheet
                     for cell in row:
@@ -71,14 +80,15 @@ class ExtractWorkbook2Sheets:
         """Load file"""
         if not self.src_file.startswith('.'):  # avoid loading hidden tmp file
             self.subject_name = self.src_file.strip('.xlsx')
-            return load_workbook(self.src_file, read_only=False, data_only=True, keep_vba=False, keep_links=False)
+            return load_workbook(self.src_file, read_only=False, data_only=True, \
+                keep_vba=False, keep_links=False)
         return None
 
 
 if __name__ == '__main__':
 
     workbook_2_sheets = ExtractWorkbook2Sheets(
-        src_file=os.path.join(RAW_PATH, 'D. Strain_v3b_FlamBer_61-120.xlsx'),
-        dst_folder=EXTRACTED_PATH,
+        src=os.path.join(RAW_PATH, 'D. Strain_v3b_FlamBer_61-120.xlsx'),
+        dst=EXTRACTED_PATH,
     )
     workbook_2_sheets()
