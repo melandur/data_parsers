@@ -1,1 +1,2 @@
-path: '/home/sebalzer/Documents/Mike_init/tests/train/'
+raw_dir: '/home/sebalzer/Documents/Mike_init/csv/0_raw'
+out_dir: '/home/sebalzer/Documents/Mike_init/tests/train/'

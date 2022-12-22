@@ -1,7 +1,8 @@
 defaults:
   - dataset: train
-  - _self_
+  - _self_ # keep this to the end of defaults to have config.yaml override values set in other yamls
 
 # add global default parameter values below
-# dataset:
-#   dim: '2d'
+dataset:
+  raw_dir: '/home/sebalzer/Documents/Mike_init/csv/0_raw'
+  dim: '2d' # '3d', 'both'
