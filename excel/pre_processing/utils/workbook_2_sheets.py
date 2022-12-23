@@ -20,9 +20,11 @@ class ExtractWorkbook2Sheets:
         self.sheet = None
         self.subject_name = None
 
+        self.sheets = {}
+
         os.makedirs(self.dst_folder, exist_ok=True)
 
-    def __call__(self) -> None:
+    def __call__(self) -> dict:
         """Extract workbook to sheets"""
         total_memory = psutil.virtual_memory().total / (1024**3)  # in GB
         if total_memory < 30:  # warn if memory is less than 32GB
@@ -32,31 +34,33 @@ class ExtractWorkbook2Sheets:
             raise ValueError(f'{self.src_file} is not a valid ".xlsx" file')
         self.extract_sheets()
 
+        return self.sheets
+
     def __del__(self) -> None:
         """What time is it"""
         logger.info(f'Execution time: {round((time.time() - self.tic) / 60, 1)} minutes')
 
     def extract_sheets(self) -> None:
         """Extract sheets"""
-        wb = self.load_file()  # load workbook
-
-        if not self.save_intermediate:
-            return DataFrame(wb)
-            
+        wb = self.load_file()  # load workbook            
 
         for sheet_name in wb.sheetnames:  # loop through sheets
             if self.check_sheet_name(sheet_name):
                 old_sheet = wb[sheet_name]  # extract sheet
-                new_wb = openpyxl.Workbook()  # create new workbook
-                new_sheet = new_wb.active  # get active sheet
                 clean_sheet_name = self.get_clean_sheet_name(sheet_name)
-                print(clean_sheet_name)
-                new_sheet.title = clean_sheet_name
-                for row in old_sheet:  # copy old sheet to new sheet
-                    for cell in row:
-                        new_sheet[cell.coordinate].value = cell.value
-                new_wb.save(f'{os.path.join(self.dst_folder, clean_sheet_name)}.xlsx')
-                new_wb.close()
+
+                if self.save_intermediate:
+                    new_wb = openpyxl.Workbook()  # create new workbook
+                    new_sheet = new_wb.active  # get active sheet
+                    new_sheet.title = clean_sheet_name
+                    for row in old_sheet:  # copy old sheet to new sheet
+                        for cell in row:
+                            new_sheet[cell.coordinate].value = cell.value
+                    new_wb.save(f'{os.path.join(self.dst_folder, clean_sheet_name)}.xlsx')
+                    new_wb.close()
+
+                else: # store in dict instead of saving files
+                    self.sheets[clean_sheet_name] = DataFrame(old_sheet.values)
 
     @staticmethod
     def get_clean_sheet_name(sheet_name: str) -> str:
@@ -85,10 +89,10 @@ class ExtractWorkbook2Sheets:
         return None
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-    workbook_2_sheets = ExtractWorkbook2Sheets(
-        src=os.path.join(RAW_PATH, 'D. Strain_v3b_FlamBer_61-120.xlsx'),
-        dst=EXTRACTED_PATH,
-    )
-    workbook_2_sheets()
+#     workbook_2_sheets = ExtractWorkbook2Sheets(
+#         src=os.path.join(RAW_PATH, 'D. Strain_v3b_FlamBer_61-120.xlsx'),
+#         dst=EXTRACTED_PATH,
+#     )
+#     workbook_2_sheets()

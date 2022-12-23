@@ -32,52 +32,54 @@ def pre_processing(config: DictConfig) -> None:
 
     if save_intermediate:
         logger.info('Intermediate results will be saved between each pre-processing step.')
-        dst_dir = os.path.join(dst_dir, '1_extracted')
+        dst = os.path.join(dst_dir, '1_extracted')
     else:
-        dst_dir = os.path.join(dst_dir, '9_final')
+        dst = os.path.join(dst_dir, '9_final')
 
     # Extract one sheet per patient from the available raw workbooks
     # additionally removes any colour formatting
+    sheets = {}
     # for src_file in os.listdir(src_dir):
     for src_file in [os.path.join(src_dir, 'D. Strain_v3b_FlamBer_61-120.xlsx')]:
         if src_file.endswith('.xlsx') and not src_file.startswith('.'):
             logger.info(f'File -> {src_file}')
             workbook_2_sheets = ExtractWorkbook2Sheets(
                 src=os.path.join(src_dir, src_file),
-                dst=dst_dir,
+                dst=dst,
                 save_intermediate=save_intermediate
             )
-            sheets = workbook_2_sheets()
+            sheets = sheets | workbook_2_sheets()
 
-    if save_intermediate:
-        src_dir = dst_dir
-        dst_dir = os.path.join(dst_dir, '2_case_wise')
+    if save_intermediate: # update paths
+        src_dir = dst
+        dst = os.path.join(dst_dir, '2_case_wise')
 
     sheets_2_tables = ExtractSheets2Tables(
         src=src_dir,
-        dst=dst_dir,
-        save_intermediate=save_intermediate
+        dst=dst,
+        save_intermediate=save_intermediate,
+        sheets=sheets
     )
     tables = sheets_2_tables()
 
     if save_intermediate:
-        src_dir = dst_dir
-        dst_dir = os.path.join(dst_dir, '3_cleaned')
+        src_dir = dst
+        dst = os.path.join(dst_dir, '3_cleaned')
 
     cleaner = TableCleaner(
         src=src_dir,
-        dst=dst_dir,
+        dst=dst,
         save_intermediate=save_intermediate
     )
     clean_tables = cleaner()
 
     if save_intermediate:
-        src_dir = dst_dir
-        dst_dir = os.path.join(dst_dir, '4_checked')
+        src_dir = dst
+        dst = os.path.join(dst_dir, '4_checked')
 
     checker = SplitByCompleteness(
         src=src_dir,
-        dst=dst_dir,
+        dst=dst,
         save_intermediate=save_intermediate
     )
     complete_tables = checker()

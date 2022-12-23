@@ -25,10 +25,12 @@ class NestedDefaultDict(defaultdict):
 
 
 class ExtractSheets2Tables:
-    def __init__(self, src: str, dst: str, save_intermediate: bool=True) -> None:
+    def __init__(self, src: str, dst: str, save_intermediate: bool=True, dim: str='2d', sheets: dict=None) -> None:
         self.src = src
         self.dst = dst
         self.save_intermediate = save_intermediate
+        self.dim = dim
+        self.sheets = sheets
         self.tic = time.time()
         self.wb = None
         self.mode = None
@@ -38,30 +40,28 @@ class ExtractSheets2Tables:
         self.data_name = None
         self.subject_name = None
         self.subject = NestedDefaultDict()
+        self.tables = NestedDefaultDict()
         os.makedirs(self.dst, exist_ok=True)
 
-    def __call__(self) -> None:
+    def __call__(self) -> NestedDefaultDict:
         """Extract sheets to tables"""
-        for _ in self.loop_files():
-            self.get_meta()
-            for row in self.loop_row():
-                self.detect_table_name(row)
-                if self.mode == 'aha_diagram':
-                    df = self.extract_aha_diagram(row)
-                    self.save(df)
-                if self.mode == 'global_roi':
-                    df = self.extract_global_roi(row)
-                    self.save(df)
-                if self.mode == 'aha_polarmap':
-                    df = self.extract_aha_polarmap(row)
-                    self.save(df)
-                if self.mode == 'roi_polarmap':
-                    df = self.extract_roi_polarmap(row)
-                    self.save(df)
-                if self.mode == 'volume':
-                    df = self.extract_volume_3d(row)
-                    self.save(df)
-            logger.info(self.count)
+        if self.save_intermediate:
+            for _ in self.loop_files():
+                self.get_meta()
+                for row in self.loop_row():
+                    self.extract_table(row)
+
+                logger.info(self.count)
+
+        else: # use dict of DataFrames
+            for self.subject_name, self.sheet in self.sheets.items():
+                self.tables[self.subject_name] = NestedDefaultDict()
+                for row in self.loop_row():
+                    self.extract_table(row)
+
+                logger.info(self.count)
+        
+        return self.tables
 
     def __del__(self) -> None:
         """What time is it"""
@@ -86,12 +86,21 @@ class ExtractSheets2Tables:
     def loop_row(self) -> range:
         """Iterate over rows and return certain row numbers"""
         start_row = 229  # start row of the first table
-        max_rows = self.sheet.max_row
+
+        if self.save_intermediate:
+            max_rows = self.sheet.max_row
+        else:
+            max_rows = len(self.sheet.index)
         self.count = 0
+
         for row_index in range(start_row, max_rows - 1):
             # considers only left ventricle data
-            if 'left' in f'{self.sheet.cell(row=row_index, column=2).value}'.lower():
-                yield row_index
+            if self.save_intermediate:
+                if 'left' in f'{self.sheet.cell(row=row_index, column=2).value}'.lower():
+                    yield row_index
+            else:
+                if 'left' in f'{self.sheet.iloc[row_index, 1]}'.lower():
+                    yield row_index
 
     def get_meta(self) -> None:
         """Get meta data from header part"""
@@ -103,7 +112,10 @@ class ExtractSheets2Tables:
 
     def detect_table_name(self, row: int) -> None:
         """Detect table name"""
-        data_name = f'{self.sheet.cell(row=row, column=2).value}{self.sheet.cell(row=row, column=3).value}'
+        if self.save_intermediate:
+            data_name = f'{self.sheet.cell(row=row, column=2).value}{self.sheet.cell(row=row, column=3).value}'
+        else:
+            data_name = f'{self.sheet.iloc[row, 1]}{self.sheet.iloc[row, 2]}'
         data_name_split = data_name.split('-')
         self.data_name = None
         self.mode = None
@@ -152,17 +164,48 @@ class ExtractSheets2Tables:
     def _table_row_end_finder(self, start_row: int, column: int, criteria: str or None = None) -> int:
         """Count relative to the start point the number of row until the table ends"""
         for row in range(start_row + 5, start_row + 400, 1):  # 400 is the maximum number of rows to search
-            if self.sheet.cell(row=row, column=column).value is criteria:
-                return row - start_row - 2  # -2 to account for the header row and the last row
+            if self.save_intermediate:
+                if self.sheet.cell(row=row, column=column).value is criteria:
+                    return row - start_row - 2  # -2 to account for the header row and the last row
+            else:
+                if self.sheet.iloc[row, column] is criteria:
+                    return row - start_row - 2  # -2 to account for the header row and the last row
+
         raise AssertionError(
             f'End of table search range reached, super long table or wrong end criteria -> {start_row}'
         )
+
+    def extract_table(self, row: int) -> pd.DataFrame:
+        """Extract table according to mode"""        
+        self.detect_table_name(row)
+        if self.mode == 'aha_diagram':
+            df = self.extract_aha_diagram(row)
+        elif self.mode == 'global_roi':
+            df = self.extract_global_roi(row)
+        elif self.mode == 'aha_polarmap':
+            df = self.extract_aha_polarmap(row)
+        elif self.mode == 'roi_polarmap':
+            df = self.extract_roi_polarmap(row)
+        elif self.mode == 'volume':
+            df = self.extract_volume_3d(row)
+        else:
+            return None
+
+
+        if self.save_intermediate:
+            self.save(df)
+        else:
+            self.tables[self.subject_name][self.data_name] = df
 
     def extract_roi_polarmap(self, row: int) -> pd.DataFrame:
         """Extract roi polarmap"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_row_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:S')
+
+        if self.save_intermediate:
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:S')
+        else:
+            df = self.sheet.iloc[row+2:row+row_end, 1:19]
         df.columns = [
             'slices',
             'roi',
@@ -189,7 +232,12 @@ class ExtractSheets2Tables:
         """Extract aha polarmap"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_row_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:R')
+        
+        if self.save_intermediate:
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:R')
+        else:
+            df = self.sheet.iloc[row+2:row+row_end, 1:18]
+
         if 'short' in self.data_name:
             axis = 'circumf'
             unit = 'deg'
@@ -220,14 +268,17 @@ class ExtractSheets2Tables:
         ]
         return df
 
-    @staticmethod
-    def rearrange_time_helper(df: pd.DataFrame) -> pd.DataFrame or None:
+    def rearrange_time_helper(self, df: pd.DataFrame) -> pd.DataFrame or None:
         """Rearrange time columns for 2d"""
         df = df.iloc[:, :-1]  # remove last column
+        # Drop completely empty rows and use first row as header in DataFrame
+        df.dropna(axis=0, how='all', inplace=True)
+        if not self.save_intermediate:
+            df = df.rename(columns=df.iloc[0]).drop(df.index[0]).reset_index(drop=True)
         header = df.columns.tolist()
         counter = 0
         for idx, name in enumerate(header):
-            if 'unnamed' in name.lower() or 'ms' in name.lower():
+            if name is None or 'unnamed' in name.lower() or 'ms' in name.lower():
                 header[idx] = f'sample_{counter}'
                 counter += 1
 
@@ -250,14 +301,17 @@ class ExtractSheets2Tables:
             return df
         return None
 
-    @staticmethod
-    def rearrange_time_volume(df: pd.DataFrame) -> pd.DataFrame or None:
+    def rearrange_time_volume(self, df: pd.DataFrame) -> pd.DataFrame or None:
         """Rearrange time columns for 3d volumes"""
         df = df.iloc[:, :-1]  # remove last column
+        # Drop completely empty rows and use first row as header in DataFrame
+        df.dropna(axis=0, how='all', inplace=True)
+        if not self.save_intermediate:
+            df = df.rename(columns=df.iloc[0]).drop(df.index[0]).reset_index(drop=True)
         header = df.head().columns.values.tolist()
         counter = 0
         for idx, name in enumerate(header):
-            if 'unnamed' in name.lower() or 'ms' in name.lower():
+            if name is None or 'unnamed' in name.lower() or 'ms' in name.lower():
                 header[idx] = f'sample_{counter}'
                 counter += 1
 
@@ -292,7 +346,12 @@ class ExtractSheets2Tables:
         """Extract aha diagram 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_row_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
+
+        if self.save_intermediate:
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
+        else:
+            df = self.sheet.iloc[row+1:row+row_end, 1:28]
+
         if not df.empty:
             if self._last_column_is_empty(df):
                 df = self.rearrange_time_helper(df)
@@ -304,7 +363,12 @@ class ExtractSheets2Tables:
         """Extract global roi 2d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_row_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AC')
+
+        if self.save_intermediate:
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AC')
+        else:
+            df = self.sheet.iloc[row+1:row+row_end, 1:29]
+
         if not df.empty:
             if self._last_column_is_empty(df):
                 df = self.rearrange_time_helper(df)
@@ -316,7 +380,12 @@ class ExtractSheets2Tables:
         """Extract volume 3d"""
         logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_row_end_finder(row, 2, None)
-        df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
+
+        if self.save_intermediate:
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
+        else:
+            df = self.sheet.iloc[row+1:row+row_end, 1:28]
+
         if not df.empty:
             if self._last_column_is_empty(df):
                 df = self.rearrange_time_volume(df)
@@ -338,11 +407,11 @@ class ExtractSheets2Tables:
             df.to_excel(f'{file_path}.xlsx', index=False)
 
 
-if __name__ == '__main__':
-    sheets_2_tables = ExtractSheets2Tables(
-        # src=EXTRACTED_PATH,
-        # dst=CASE_WISE_PATH,
-        src='/home/sebalzer/Documents/Mike_init/tests/train/1_extracted',
-        dst='/home/sebalzer/Documents/Mike_init/tests/train/2_case_wise'
-    )
-    sheets_2_tables()
+# if __name__ == '__main__':
+#     sheets_2_tables = ExtractSheets2Tables(
+#         # src=EXTRACTED_PATH,
+#         # dst=CASE_WISE_PATH,
+#         src='/home/sebalzer/Documents/Mike_init/tests/train/1_extracted',
+#         dst='/home/sebalzer/Documents/Mike_init/tests/train/2_case_wise'
+#     )
+#     sheets_2_tables()
