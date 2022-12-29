@@ -44,7 +44,9 @@ class SplitByCompleteness:
             # delete all subjects with missing tables in requested dims
             for subject in list(self.tables.keys()):
                 # Check whether all 32 2d and 13 3d tables are present
+                logger.debug(f'len {len(self.tables[subject]["2d"])} for subject {subject}')
                 if '2d' in self.dims and len(self.tables[subject]['2d']) != 32:
+                    logger.debug(f'removed subject {subject}')
                     del self.tables[subject]
                 if '3d' in self.dims and len(self.tables[subject]['3d']) != 13:
                     del self.tables[subject]

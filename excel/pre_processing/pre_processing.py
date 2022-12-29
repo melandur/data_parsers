@@ -76,7 +76,7 @@ def pre_processing(config: DictConfig) -> None:
         tables=tables
     )
     clean_tables = cleaner()
-    # print(clean_tables["31"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
+    # print(clean_tables["17"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
 
     if save_intermediate:
         src_dir = dst
@@ -90,7 +90,8 @@ def pre_processing(config: DictConfig) -> None:
         tables=clean_tables
     )
     complete_tables = checker()
-    # print(complete_tables["31"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
+    print(complete_tables.keys())
+    print(complete_tables["24"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
 
 
 if __name__ == '__main__':
