@@ -7,4 +7,4 @@ dataset:
   # whether to save intermediate steps
   save_intermediate: False
   # which data to include in the pre-processing/analysis
-  dim: '2d' # '3d', 'both'
+  dims: ['2d'] # '3d', 'both'

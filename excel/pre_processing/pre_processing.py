@@ -29,6 +29,7 @@ def pre_processing(config: DictConfig) -> None:
     src_dir = config.dataset.raw_dir
     dst_dir = config.dataset.out_dir
     save_intermediate = config.dataset.save_intermediate
+    dims = config.dataset.dims
 
     if save_intermediate:
         logger.info('Intermediate results will be saved between each pre-processing step.')
@@ -61,6 +62,7 @@ def pre_processing(config: DictConfig) -> None:
         sheets=sheets
     )
     tables = sheets_2_tables()
+    # print(tables["31"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
 
     if save_intermediate:
         src_dir = dst
@@ -69,9 +71,12 @@ def pre_processing(config: DictConfig) -> None:
     cleaner = TableCleaner(
         src=src_dir,
         dst=dst,
-        save_intermediate=save_intermediate
+        save_intermediate=save_intermediate,
+        dims=dims,
+        tables=tables
     )
     clean_tables = cleaner()
+    # print(clean_tables["31"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
 
     if save_intermediate:
         src_dir = dst
@@ -80,9 +85,12 @@ def pre_processing(config: DictConfig) -> None:
     checker = SplitByCompleteness(
         src=src_dir,
         dst=dst,
-        save_intermediate=save_intermediate
+        save_intermediate=save_intermediate,
+        dims=dims,
+        tables=clean_tables
     )
     complete_tables = checker()
+    # print(complete_tables["31"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
 
 
 if __name__ == '__main__':

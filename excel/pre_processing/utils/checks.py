@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 import shutil
 
 from loguru import logger
@@ -6,25 +7,49 @@ import pandas as pd
 
 # from excel.path_master import CLEANED_PATH, CHECKED_PATH
 
+class NestedDefaultDict(defaultdict):
+    """Nested dict, which can be dynamically expanded on the fly"""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(NestedDefaultDict, *args, **kwargs)
+
+    def __repr__(self) -> str:
+        return repr(dict(self))
 
 class SplitByCompleteness:
     """Sort files by completeness"""
 
-    def __init__(self, src: str, dst: str, save_intermediate: bool=True) -> None:
+    def __init__(self, src: str, dst: str, save_intermediate: bool=True, \
+        dims: list=['2d'], tables: NestedDefaultDict=None) -> None:
         self.src = src
         self.dst = dst
         self.save_intermediate = save_intermediate
+        self.dims = dims
+        self.tables = tables
         self.count = 0
         self.memory = {}
         self.complete_files = {}
         self.missing_files = {}
 
-    def __call__(self) -> None:
-        for case in self.get_cases():
-            self.count_files(case)
-            self.memory[case] = self.count
-        self.divide_cases()
-        self.move_files()
+    def __call__(self) -> NestedDefaultDict:
+        if self.save_intermediate:
+            for case in self.get_cases():
+                self.count_files(case)
+                self.memory[case] = self.count
+            self.divide_cases()
+            self.move_files()
+
+        else: # use dict of DataFrames
+            # Instead of dividing into complete and missing,
+            # delete all subjects with missing tables in requested dims
+            for subject in list(self.tables.keys()):
+                # Check whether all 32 2d and 13 3d tables are present
+                if '2d' in self.dims and len(self.tables[subject]['2d']) != 32:
+                    del self.tables[subject]
+                if '3d' in self.dims and len(self.tables[subject]['3d']) != 13:
+                    del self.tables[subject]
+
+        return self.tables
 
     def get_cases(self) -> str:
         """Get all cases from the cleaned folder"""
@@ -70,10 +95,10 @@ class SplitByCompleteness:
             logger.info(f'move -> {case}')
 
 
-if __name__ == '__main__':
-    # src = CLEANED_PATH
-    # dst = CHECKED_PATH
-    src = '/home/sebalzer/Documents/Mike_init/tests/train/3_cleaned'
-    dst = '/home/sebalzer/Documents/Mike_init/tests/train/4_checked'
-    counter = SplitByCompleteness(src, dst)
-    counter()
+# if __name__ == '__main__':
+#     # src = CLEANED_PATH
+#     # dst = CHECKED_PATH
+#     src = '/home/sebalzer/Documents/Mike_init/tests/train/3_cleaned'
+#     dst = '/home/sebalzer/Documents/Mike_init/tests/train/4_checked'
+#     counter = SplitByCompleteness(src, dst)
+#     counter()

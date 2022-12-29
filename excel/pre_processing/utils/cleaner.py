@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -12,26 +13,52 @@ pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
 
 
+class NestedDefaultDict(defaultdict):
+    """Nested dict, which can be dynamically expanded on the fly"""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(NestedDefaultDict, *args, **kwargs)
+
+    def __repr__(self) -> str:
+        return repr(dict(self))
+
 class TableCleaner:
     """Inter-/Extrapolate NaN rows or delete them"""
 
-    def __init__(self, src: str, dst: str, save_intermediate: bool=True):
+    def __init__(self, src: str, dst: str, save_intermediate: bool=True, \
+        dims: list=['2d'], tables: NestedDefaultDict=None) -> None:
         self.src = src
         self.dst = dst
         self.save_intermediate = save_intermediate
+        self.dims = dims
+        self.tables = tables
 
-    def __call__(self) -> None:
+    def __call__(self) -> NestedDefaultDict:
         for subject in self.loop_subjects():
-            for dim in ['2d', '3d']:
-                for table in self.loop_tables(subject, dim):
-                    df = self.clean(subject, dim, table)
-                    self.save(df, subject, dim, table)
+            for dim in self.dims:
+
+                if self.save_intermediate:
+                    for table in self.loop_tables(subject, dim):
+                        df = self.clean(subject, dim, table)
+                        self.save(df, subject, dim, table)
+
+                else: # use dict of DataFrames
+                    for table in self.tables[subject][dim]:
+                        self.tables[subject][dim][table] = self.clean(subject, dim, table)
+
+        return self.tables
+
 
     def loop_subjects(self) -> str:
         """Loop over subjects"""
-        for subject in os.listdir(self.src):
-            logger.info(f'-> {subject}')
-            yield subject
+        if self.save_intermediate:
+            for subject in os.listdir(self.src):
+                logger.info(f'-> {subject}')
+                yield subject
+        else:
+            for subject in self.tables.keys():
+                logger.info(f'-> {subject}')
+                yield subject
 
     def loop_tables(self, subject: str, dim: str) -> str:
         """Loop over tables"""
@@ -41,8 +68,12 @@ class TableCleaner:
 
     def clean(self, subject: str, dim: str, table: str) -> pd.DataFrame:
         """Clean table"""
-        table_path = os.path.join(self.src, subject, dim, table)
-        df = pd.read_excel(table_path)
+        if self.save_intermediate:
+            path = os.path.join(self.src, subject, dim, table)
+            df = pd.read_excel(path)
+
+        else:
+            df = self.tables[subject][dim][table]
 
         # Standardise missing entries into np.nan
         for x in ['nan ', 'nan', 'NaN', 'NaN ']:
@@ -68,10 +99,10 @@ class TableCleaner:
         logger.info(f'-> {table}')
 
 
-if __name__ == '__main__':
-    # src = CASE_WISE_PATH
-    # dst = CLEANED_PATH
-    src = '/home/sebalzer/Documents/Mike_init/tests/train/2_case_wise'
-    dst = '/home/sebalzer/Documents/Mike_init/tests/train/3_cleaned'
-    tc = TableCleaner(src, dst)
-    tc()
+# if __name__ == '__main__':
+#     # src = CASE_WISE_PATH
+#     # dst = CLEANED_PATH
+#     src = '/home/sebalzer/Documents/Mike_init/tests/train/2_case_wise'
+#     dst = '/home/sebalzer/Documents/Mike_init/tests/train/3_cleaned'
+#     tc = TableCleaner(src, dst)
+#     tc()

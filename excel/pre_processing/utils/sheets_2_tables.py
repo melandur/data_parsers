@@ -25,11 +25,12 @@ class NestedDefaultDict(defaultdict):
 
 
 class ExtractSheets2Tables:
-    def __init__(self, src: str, dst: str, save_intermediate: bool=True, dim: str='2d', sheets: dict=None) -> None:
+    def __init__(self, src: str, dst: str, save_intermediate: bool=True, \
+        dims: list=['2d'], sheets: dict=None) -> None:
         self.src = src
         self.dst = dst
         self.save_intermediate = save_intermediate
-        self.dim = dim
+        self.dims = dims
         self.sheets = sheets
         self.tic = time.time()
         self.wb = None
@@ -56,10 +57,12 @@ class ExtractSheets2Tables:
         else: # use dict of DataFrames
             for self.subject_name, self.sheet in self.sheets.items():
                 self.tables[self.subject_name] = NestedDefaultDict()
-                for row in self.loop_row():
-                    self.extract_table(row)
+                for self.dim in self.dims:
+                    self.tables[self.subject_name][self.dim] = NestedDefaultDict()
+                    for row in self.loop_row():
+                        self.extract_table(row)
 
-                logger.info(self.count)
+                    logger.info(self.count)
         
         return self.tables
 
@@ -131,15 +134,12 @@ class ExtractSheets2Tables:
             sub_name_2 = sub_name_2.replace('longitudinal', 'longit')
             sub_name_2 = sub_name_2.replace('circumferential', 'circumf')
             if 'AHA Diagram Data' in data_name_split[0]:
-                self.count += 1
                 self.data_name = f'aha_{sub_name_1}_{sub_name_2}'
                 self.mode = 'aha_diagram'
             elif 'Global and ROI Diagram Data' in data_name_split[0]:
-                self.count += 1
                 self.data_name = f'global_roi_{sub_name_1}_{sub_name_2}'
                 self.mode = 'global_roi'
             elif 'Volume' in data_name_split[2]:
-                self.count += 1
                 self.data_name = f'volume_{sub_name_1}_(ml)'
                 self.mode = 'volume'
 
@@ -148,11 +148,9 @@ class ExtractSheets2Tables:
             sub_name_1 = sub_name_1.replace(' ', '_').lower()
             if '2D' in data_name_split[1]:
                 if 'ROI Polarmap Data' in data_name_split[0] or 'ROI Polarmap Data' in data_name_split[1]:
-                    self.count += 1
                     self.data_name = 'roi_polarmap_2d'
                     self.mode = 'roi_polarmap'
                 elif 'AHA Polarmap Data' in data_name_split[0]:
-                    self.count += 1
                     self.mode = 'aha_polarmap'
                     if 'long' in sub_name_1.lower():
                         self.data_name = 'aha_polarmap_2d_long_axis'
@@ -178,6 +176,14 @@ class ExtractSheets2Tables:
     def extract_table(self, row: int) -> pd.DataFrame:
         """Extract table according to mode"""        
         self.detect_table_name(row)
+
+        # Only extract tables with data in requested dims
+        for dim in self.dims:
+            if self.data_name is None or dim not in self.data_name:
+                return None
+            else:
+                self.count += 1
+
         if self.mode == 'aha_diagram':
             df = self.extract_aha_diagram(row)
         elif self.mode == 'global_roi':
@@ -195,7 +201,7 @@ class ExtractSheets2Tables:
         if self.save_intermediate:
             self.save(df)
         else:
-            self.tables[self.subject_name][self.data_name] = df
+            self.tables[self.subject_name][self.dim][self.data_name] = df
 
     def extract_roi_polarmap(self, row: int) -> pd.DataFrame:
         """Extract roi polarmap"""
@@ -272,7 +278,7 @@ class ExtractSheets2Tables:
         """Rearrange time columns for 2d"""
         df = df.iloc[:, :-1]  # remove last column
         # Drop completely empty rows and use first row as header in DataFrame
-        df.dropna(axis=0, how='all', inplace=True)
+        df = df.dropna(axis=0, how='all')
         if not self.save_intermediate:
             df = df.rename(columns=df.iloc[0]).drop(df.index[0]).reset_index(drop=True)
         header = df.columns.tolist()
@@ -305,7 +311,7 @@ class ExtractSheets2Tables:
         """Rearrange time columns for 3d volumes"""
         df = df.iloc[:, :-1]  # remove last column
         # Drop completely empty rows and use first row as header in DataFrame
-        df.dropna(axis=0, how='all', inplace=True)
+        df = df.dropna(axis=0, how='all')
         if not self.save_intermediate:
             df = df.rename(columns=df.iloc[0]).drop(df.index[0]).reset_index(drop=True)
         header = df.head().columns.values.tolist()
