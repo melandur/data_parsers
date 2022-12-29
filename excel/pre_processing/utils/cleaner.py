@@ -75,6 +75,9 @@ class TableCleaner:
         else:
             df = self.tables[subject][dim][table]
 
+        if df is None:
+            return None
+
         # Standardise missing entries into np.nan
         for x in ['nan ', 'nan', 'NaN', 'NaN ']:
             df = df.replace(x, np.nan)
