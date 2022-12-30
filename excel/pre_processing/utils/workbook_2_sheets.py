@@ -26,9 +26,9 @@ class ExtractWorkbook2Sheets:
 
     def __call__(self) -> dict:
         """Extract workbook to sheets"""
-        total_memory = psutil.virtual_memory().total / (1024**3)  # in GB
-        if total_memory < 30:  # warn if memory is less than 32GB
-            raise MemoryError('Not enough memory to extract workbook to sheets, 32 GB of RAM is required')
+        # total_memory = psutil.virtual_memory().total / (1024**3)  # in GB
+        # if total_memory < 30:  # warn if memory is less than 32GB
+        #     raise MemoryError('Not enough memory to extract workbook to sheets, 32 GB of RAM is required')
         logger.info('Extract workbook to sheets is running...')
         if not self.src_file.endswith('.xlsx') and not os.path.exists(self.src_file):
             raise ValueError(f'{self.src_file} is not a valid ".xlsx" file')

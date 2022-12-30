@@ -40,11 +40,20 @@ class TableCleaner:
                 if self.save_intermediate:
                     for table in self.loop_tables(subject, dim):
                         df = self.clean(subject, dim, table)
-                        self.save(df, subject, dim, table)
+                        if df is not None:
+                            self.save(df, subject, dim, table)
 
                 else: # use dict of DataFrames
                     for table in self.tables[subject][dim]:
                         self.tables[subject][dim][table] = self.clean(subject, dim, table)
+
+        # Remove any dict entries with empty DataFrames
+        if not self.save_intermediate:
+            for subject in self.loop_subjects():
+                for dim in self.dims:
+                    filtered = {k: v for k, v in self.tables[subject][dim].items() if v is not None}
+                    self.tables[subject][dim].clear()
+                    self.tables[subject][dim].update(filtered)
 
         return self.tables
 
@@ -92,6 +101,10 @@ class TableCleaner:
         # nans = df.isna().sum()
         df.dropna(inplace=True)
         df = df.reset_index(drop=True)
+
+        if df.empty:
+            return None
+
         return df
 
     def save(self, df: pd.DataFrame, subject: str, dim: str, table: str) -> None:

@@ -2,7 +2,7 @@
     from raw civ42 data excel files
 """
 
-import os
+import os, sys
 
 import hydra
 from loguru import logger
@@ -30,6 +30,8 @@ def pre_processing(config: DictConfig) -> None:
     dst_dir = config.dataset.out_dir
     save_intermediate = config.dataset.save_intermediate
     dims = config.dataset.dims
+
+    print(sys.path)
 
     if save_intermediate:
         logger.info('Intermediate results will be saved between each pre-processing step.')
@@ -62,7 +64,7 @@ def pre_processing(config: DictConfig) -> None:
         sheets=sheets
     )
     tables = sheets_2_tables()
-    # print(tables["31"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
+    # print(tables["26"]['2d'])
 
     if save_intermediate:
         src_dir = dst
@@ -76,7 +78,7 @@ def pre_processing(config: DictConfig) -> None:
         tables=tables
     )
     clean_tables = cleaner()
-    # print(clean_tables["17"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
+    # print(clean_tables["26"]['2d'])
 
     if save_intermediate:
         src_dir = dst
@@ -91,7 +93,7 @@ def pre_processing(config: DictConfig) -> None:
     )
     complete_tables = checker()
     print(complete_tables.keys())
-    print(complete_tables["24"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
+    # print(complete_tables["26"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
 
 
 if __name__ == '__main__':
