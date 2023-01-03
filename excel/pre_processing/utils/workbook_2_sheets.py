@@ -2,12 +2,9 @@ import os
 import time
 
 import openpyxl
-import psutil
 from loguru import logger
 from openpyxl import load_workbook
 from pandas import DataFrame
-
-from excel.path_master import EXTRACTED_PATH, RAW_PATH
 
 
 class ExtractWorkbook2Sheets:
@@ -87,12 +84,3 @@ class ExtractWorkbook2Sheets:
             return load_workbook(self.src_file, read_only=False, data_only=True, \
                 keep_vba=False, keep_links=False)
         return None
-
-
-# if __name__ == '__main__':
-
-#     workbook_2_sheets = ExtractWorkbook2Sheets(
-#         src=os.path.join(RAW_PATH, 'D. Strain_v3b_FlamBer_61-120.xlsx'),
-#         dst=EXTRACTED_PATH,
-#     )
-#     workbook_2_sheets()

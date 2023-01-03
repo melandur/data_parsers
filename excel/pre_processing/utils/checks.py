@@ -5,16 +5,8 @@ import shutil
 from loguru import logger
 import pandas as pd
 
-# from excel.path_master import CLEANED_PATH, CHECKED_PATH
+from excel.pre_processing.utils.helpers import NestedDefaultDict
 
-class NestedDefaultDict(defaultdict):
-    """Nested dict, which can be dynamically expanded on the fly"""
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(NestedDefaultDict, *args, **kwargs)
-
-    def __repr__(self) -> str:
-        return repr(dict(self))
 
 class SplitByCompleteness:
     """Sort files by completeness"""
@@ -31,6 +23,14 @@ class SplitByCompleteness:
         self.complete_files = {}
         self.missing_files = {}
 
+        # Set target count according to requested dims
+        if '2d' in dims and '3d' in dims:
+            self.target_count = 45
+        elif '2d' in dims:
+            self.target_count = 32
+        elif '3d' in dims:
+            self.target_count = 13
+
     def __call__(self) -> NestedDefaultDict:
         if self.save_intermediate:
             for case in self.get_cases():
@@ -46,10 +46,11 @@ class SplitByCompleteness:
                 # Check whether all 32 2d and 13 3d tables are present
                 logger.debug(f'len {len(self.tables[subject]["2d"])} for subject {subject}')
                 if '2d' in self.dims and len(self.tables[subject]['2d']) != 32:
-                    logger.debug(f'removed subject {subject}')
                     del self.tables[subject]
-                if '3d' in self.dims and len(self.tables[subject]['3d']) != 13:
+                    logger.info(f'Removed subject {subject} due to missing 2d tables.')
+                elif '3d' in self.dims and len(self.tables[subject]['3d']) != 13:
                     del self.tables[subject]
+                    logger.info(f'Removed subject {subject} due to missing 3d tables.')
 
         return self.tables
 
@@ -69,13 +70,11 @@ class SplitByCompleteness:
                     df = pd.read_excel(os.path.join(root, file))
                     if not df.iloc[:, 5].isnull().all():  # checks column 5 for NaN
                         self.count += 1
-                    # else:
-                    #     print(f"Col 5 NaN detected in {file}")
 
     def divide_cases(self) -> None:
         """Divide cases into complete and missing"""
         for case, counted_files in self.memory.items():
-            if counted_files == 45:  # number of files in a complete case
+            if counted_files == self.target_count:
                 self.complete_files[case] = counted_files
             else:
                 self.missing_files[case] = counted_files
@@ -84,23 +83,14 @@ class SplitByCompleteness:
         """Move files to their destination folder"""
         logger.info('Copy complete cases')
         for case in self.complete_files:
-            complete_file_path = os.path.join(self.dst, 'complete', case)
+            complete_file_path = os.path.join(self.dst, case)
             os.makedirs(complete_file_path, exist_ok=True)
             shutil.copytree(os.path.join(self.src, case), complete_file_path, dirs_exist_ok=True)
             logger.info(f'move -> {case}')
 
-        logger.info('Copy missing cases')
-        for case in self.missing_files:
-            missing_file_path = os.path.join(self.dst, 'missing', case)
-            os.makedirs(missing_file_path, exist_ok=True)
-            shutil.copytree(os.path.join(self.src, case), missing_file_path, dirs_exist_ok=True)
-            logger.info(f'move -> {case}')
-
-
-# if __name__ == '__main__':
-#     # src = CLEANED_PATH
-#     # dst = CHECKED_PATH
-#     src = '/home/sebalzer/Documents/Mike_init/tests/train/3_cleaned'
-#     dst = '/home/sebalzer/Documents/Mike_init/tests/train/4_checked'
-#     counter = SplitByCompleteness(src, dst)
-#     counter()
+        # logger.info('Copy missing cases')
+        # for case in self.missing_files:
+        #     missing_file_path = os.path.join(self.dst, 'missing', case)
+        #     os.makedirs(missing_file_path, exist_ok=True)
+        #     shutil.copytree(os.path.join(self.src, case), missing_file_path, dirs_exist_ok=True)
+        #     logger.info(f'move -> {case}')

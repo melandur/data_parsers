@@ -5,6 +5,8 @@ defaults:
 # add global default parameter values below
 dataset:
   # whether to save intermediate steps
-  save_intermediate: False
+  save_intermediate: True
+  # whether to save the final pre-processed tables (only relevant if save_intermediate is False)
+  save_final: True
   # which data to include in the pre-processing/analysis
   dims: ['2d'] # '3d', 'both'

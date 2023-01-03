@@ -6,22 +6,12 @@ import pandas as pd
 from loguru import logger
 from openpyxl import load_workbook
 
-# from excel.path_master import EXTRACTED_PATH, CASE_WISE_PATH
+from excel.pre_processing.utils.helpers import NestedDefaultDict
 
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
-
-
-class NestedDefaultDict(defaultdict):
-    """Nested dict, which can be dynamically expanded on the fly"""
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(NestedDefaultDict, *args, **kwargs)
-
-    def __repr__(self) -> str:
-        return repr(dict(self))
 
 
 class ExtractSheets2Tables:
@@ -411,13 +401,3 @@ class ExtractSheets2Tables:
             file_path = os.path.join(self.dst, self.subject_name, d_name, f'{self.subject_name}_{self.data_name}')
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             df.to_excel(f'{file_path}.xlsx', index=False)
-
-
-# if __name__ == '__main__':
-#     sheets_2_tables = ExtractSheets2Tables(
-#         # src=EXTRACTED_PATH,
-#         # dst=CASE_WISE_PATH,
-#         src='/home/sebalzer/Documents/Mike_init/tests/train/1_extracted',
-#         dst='/home/sebalzer/Documents/Mike_init/tests/train/2_case_wise'
-#     )
-#     sheets_2_tables()

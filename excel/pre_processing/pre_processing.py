@@ -2,16 +2,17 @@
     from raw civ42 data excel files
 """
 
-import os, sys
+import os
 
 import hydra
 from loguru import logger
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 
 from excel.pre_processing.utils.workbook_2_sheets import ExtractWorkbook2Sheets
 from excel.pre_processing.utils.sheets_2_tables import ExtractSheets2Tables
 from excel.pre_processing.utils.cleaner import TableCleaner
 from excel.pre_processing.utils.checks import SplitByCompleteness
+from excel.pre_processing.utils.helpers import SaveTables
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config')
@@ -29,15 +30,22 @@ def pre_processing(config: DictConfig) -> None:
     src_dir = config.dataset.raw_dir
     dst_dir = config.dataset.out_dir
     save_intermediate = config.dataset.save_intermediate
+    save_final = config.dataset.save_final
     dims = config.dataset.dims
 
-    print(sys.path)
+    # Set dir name according to requested dims
+    if '2d' in dims and '3d' in dims:
+        dir_name = 'complete'
+    elif '2d' in dims:
+        dir_name = 'complete_2d'
+    elif '3d' in dims:
+        dir_name = 'complete_3d'
 
     if save_intermediate:
         logger.info('Intermediate results will be saved between each pre-processing step.')
         dst = os.path.join(dst_dir, '1_extracted')
     else:
-        dst = os.path.join(dst_dir, '9_final')
+        dst = os.path.join(dst_dir, '9_final', dir_name)
 
     # Extract one sheet per patient from the available raw workbooks
     # additionally removes any colour formatting
@@ -64,9 +72,8 @@ def pre_processing(config: DictConfig) -> None:
         sheets=sheets
     )
     tables = sheets_2_tables()
-    # print(tables["26"]['2d'])
 
-    if save_intermediate:
+    if save_intermediate: # update paths
         src_dir = dst
         dst = os.path.join(dst_dir, '3_cleaned')
 
@@ -78,11 +85,10 @@ def pre_processing(config: DictConfig) -> None:
         tables=tables
     )
     clean_tables = cleaner()
-    # print(clean_tables["26"]['2d'])
 
-    if save_intermediate:
+    if save_intermediate: # update paths
         src_dir = dst
-        dst = os.path.join(dst_dir, '4_checked')
+        dst = os.path.join(dst_dir, '4_checked', dir_name)
 
     checker = SplitByCompleteness(
         src=src_dir,
@@ -92,8 +98,15 @@ def pre_processing(config: DictConfig) -> None:
         tables=clean_tables
     )
     complete_tables = checker()
-    print(complete_tables.keys())
-    # print(complete_tables["26"]['2d']['global_roi_2d_short_axis_radial_strain_(%)'].iloc[:10, :8])
+
+    # Save final pre-processed tables (only relevant if save_intermediate=False)
+    if not save_intermediate and save_final:
+        saver = SaveTables(
+            dst=dst,
+            tables=complete_tables
+        )
+
+        saver()
 
 
 if __name__ == '__main__':
