@@ -53,11 +53,11 @@ class TableCleaner:
         """Loop over subjects"""
         if self.save_intermediate:
             for subject in os.listdir(self.src):
-                logger.info(f'-> {subject}')
+                logger.info(f'Cleaning subject -> {subject}')
                 yield subject
         else:
             for subject in self.tables.keys():
-                logger.info(f'-> {subject}')
+                logger.info(f'Cleaning subject -> {subject}')
                 yield subject
 
     def loop_tables(self, subject: str, dim: str) -> str:
@@ -103,6 +103,5 @@ class TableCleaner:
         export_path = os.path.join(self.dst, subject, dim, table)
         os.makedirs(os.path.dirname(export_path), exist_ok=True)
         df.to_excel(export_path, index=False)
-        logger.info(f'-> {table}')
 
 

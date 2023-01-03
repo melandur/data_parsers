@@ -42,8 +42,6 @@ class ExtractSheets2Tables:
                 for row in self.loop_row():
                     self.extract_table(row)
 
-                logger.info(self.count)
-
         else: # use dict of DataFrames
             for self.subject_name, self.sheet in self.sheets.items():
                 self.tables[self.subject_name] = NestedDefaultDict()
@@ -189,7 +187,7 @@ class ExtractSheets2Tables:
         if self.save_intermediate:
             self.save(df)
         else:
-            self.tables[self.subject_name][self.dim][self.data_name] = df
+            self.tables[self.subject_name][self.dim][f'{self.subject_name}_{self.data_name}'] = df
 
     def extract_roi_polarmap(self, row: int) -> pd.DataFrame:
         """Extract roi polarmap"""

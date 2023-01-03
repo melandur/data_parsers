@@ -42,6 +42,7 @@ class SplitByCompleteness:
             # Instead of dividing into complete and missing,
             # delete all subjects with missing tables in requested dims
             for subject in list(self.tables.keys()):
+                logger.info(f'Checking subject -> {subject}')
                 # Check whether all 32 2d and 13 3d tables are present
                 if '2d' in self.dims and len(self.tables[subject]['2d']) != 32:
                     del self.tables[subject]
@@ -56,7 +57,7 @@ class SplitByCompleteness:
         """Get all cases from the cleaned folder"""
         cases = os.listdir(self.src)
         for case in cases:
-            logger.info(f'read -> {case}')
+            logger.info(f'Checking subject -> {case}')
             self.count = 0
             yield case
 
@@ -84,11 +85,4 @@ class SplitByCompleteness:
             complete_file_path = os.path.join(self.dst, case)
             os.makedirs(complete_file_path, exist_ok=True)
             shutil.copytree(os.path.join(self.src, case), complete_file_path, dirs_exist_ok=True)
-            logger.info(f'move -> {case}')
-
-        # logger.info('Copy missing cases')
-        # for case in self.missing_files:
-        #     missing_file_path = os.path.join(self.dst, 'missing', case)
-        #     os.makedirs(missing_file_path, exist_ok=True)
-        #     shutil.copytree(os.path.join(self.src, case), missing_file_path, dirs_exist_ok=True)
-        #     logger.info(f'move -> {case}')
+            logger.info(f'Complete subject -> {case}')
