@@ -157,7 +157,7 @@ class ExtractSheets2Tables:
                     return row - start_row - 2  # -2 to account for the header row and the last row
             else:
                 if self.sheet.iloc[row, column] is criteria:
-                    return row - start_row - 2  # -2 to account for the header row and the last row
+                    return row - start_row  # -2 to account for the header row and the last row
 
         raise AssertionError(
             f'End of table search range reached, super long table or wrong end criteria -> {start_row}'
@@ -186,7 +186,6 @@ class ExtractSheets2Tables:
             df = self.extract_volume_3d(row)
         else:
             return None
-
 
         if self.save_intermediate:
             self.save(df)
