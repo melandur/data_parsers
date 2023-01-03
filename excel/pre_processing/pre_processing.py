@@ -8,6 +8,7 @@ import hydra
 from loguru import logger
 from omegaconf import DictConfig
 
+from excel.global_helpers import checked_dir
 from excel.pre_processing.utils.workbook_2_sheets import ExtractWorkbook2Sheets
 from excel.pre_processing.utils.sheets_2_tables import ExtractSheets2Tables
 from excel.pre_processing.utils.cleaner import TableCleaner
@@ -33,19 +34,13 @@ def pre_processing(config: DictConfig) -> None:
     save_final = config.dataset.save_final
     dims = config.dataset.dims
 
-    # Set dir name according to requested dims
-    if '2d' in dims and '3d' in dims:
-        dir_name = 'complete'
-    elif '2d' in dims:
-        dir_name = 'complete_2d'
-    elif '3d' in dims:
-        dir_name = 'complete_3d'
+    dir_name = checked_dir(dims)
 
     if save_intermediate:
         logger.info('Intermediate results will be saved between each pre-processing step.')
         dst = os.path.join(dst_dir, '1_extracted')
     else:
-        dst = os.path.join(dst_dir, '9_final', dir_name)
+        dst = os.path.join(dst_dir, '4_checked', dir_name)
 
     # Extract one sheet per patient from the available raw workbooks
     # additionally removes any colour formatting

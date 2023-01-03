@@ -2,11 +2,23 @@ defaults:
   - dataset: train
   - _self_ # keep this to the end of defaults to have config.yaml override values set in other yamls
 
-# add global default parameter values below
+### add global default parameter values below
 dataset:
   # whether to save intermediate steps
   save_intermediate: False
   # whether to save the final pre-processed tables (only relevant if save_intermediate is False)
   save_final: True
   # which data to include in the pre-processing/analysis
-  dims: ['2d'] # '3d', 'both'
+  dims: ['2d']
+
+analysis:
+  # which localities to use data from (global, aha or roi)
+  localities: ['roi']
+  # which axes to consider
+  axes: ['long']
+  # which orientations to consider
+  orientations: ['longitudinal']
+  # which metrics to consider
+  metrics: ['strain']
+  # whether to reduce data to peak values (i.e. lose time component)
+  peak_values: True
