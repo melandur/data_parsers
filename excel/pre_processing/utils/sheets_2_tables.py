@@ -114,7 +114,6 @@ class ExtractSheets2Tables:
         self.mode = None
 
         if len(data_name_split) == 3:
-            logger.info(data_name_split)
             sub_name_1 = data_name_split[1].replace('Results', '').strip()
             sub_name_1 = sub_name_1.replace(' ', '_').lower()
             sub_name_2 = data_name_split[2].replace('None', '').strip()
@@ -157,7 +156,7 @@ class ExtractSheets2Tables:
                     return row - start_row - 2  # -2 to account for the header row and the last row
             else:
                 if self.sheet.iloc[row, column] is criteria:
-                    return row - start_row  # -2 to account for the header row and the last row
+                    return row - start_row
 
         raise AssertionError(
             f'End of table search range reached, super long table or wrong end criteria -> {start_row}'
@@ -194,7 +193,6 @@ class ExtractSheets2Tables:
 
     def extract_roi_polarmap(self, row: int) -> pd.DataFrame:
         """Extract roi polarmap"""
-        logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_row_end_finder(row, 2, None)
 
         if self.save_intermediate:
@@ -225,7 +223,6 @@ class ExtractSheets2Tables:
 
     def extract_aha_polarmap(self, row: int) -> pd.DataFrame:
         """Extract aha polarmap"""
-        logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_row_end_finder(row, 2, None)
         
         if self.save_intermediate:
@@ -339,7 +336,6 @@ class ExtractSheets2Tables:
 
     def extract_aha_diagram(self, row: int) -> pd.DataFrame or None:
         """Extract aha diagram 2d"""
-        logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_row_end_finder(row, 2, None)
 
         if self.save_intermediate:
@@ -356,7 +352,6 @@ class ExtractSheets2Tables:
 
     def extract_global_roi(self, row: int) -> pd.DataFrame or None:
         """Extract global roi 2d"""
-        logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_row_end_finder(row, 2, None)
 
         if self.save_intermediate:
@@ -373,7 +368,6 @@ class ExtractSheets2Tables:
 
     def extract_volume_3d(self, row: int) -> pd.DataFrame or None:
         """Extract volume 3d"""
-        logger.info(f'{row} {self.mode} {self.data_name}')
         row_end = self._table_row_end_finder(row, 2, None)
 
         if self.save_intermediate:
