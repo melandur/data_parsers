@@ -23,8 +23,7 @@ def analysis(config: DictConfig) -> None:
         None
     """    
     # Parse some config parameters
-    src_dir = config.dataset.raw_dir
-    dst_dir = config.dataset.out_dir
+    src_dir = config.dataset.out_dir
     dims = config.dataset.dims
 
     localities = config.analysis.localities
@@ -34,8 +33,6 @@ def analysis(config: DictConfig) -> None:
     peak_values = config.analysis.peak_values
 
     dir_name = checked_dir(dims)
-
-    # TODO: might want to combine locality and dim to avoid polarmaps
 
     # TODO: train and test paths/sets
     logger.info('Extracting data according to config parameters...')
@@ -51,4 +48,7 @@ def analysis(config: DictConfig) -> None:
     data = extractor()
     logger.info('Data extraction finished.')
 
+
+if __name__ == '__main__':
+    analysis()
     

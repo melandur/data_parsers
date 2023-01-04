@@ -3,7 +3,6 @@ import os
 import pandas as pd
 from loguru import logger
 
-# from excel.path_master import CONDENSED_PATH, MERGED_PATH
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)

@@ -15,10 +15,10 @@ analysis:
   # which localities to use data from (global, aha or roi)
   localities: ['roi']
   # which axes to consider
-  axes: ['long']
+  axes: ['long_axis', 'short_axis']
   # which orientations to consider
-  orientations: ['longitudinal']
+  orientations: ['radial', 'circumf', 'longit']
   # which metrics to consider
-  metrics: ['strain']
+  metrics: ['strain', 'strain_rate']
   # whether to reduce data to peak values (i.e. lose time component)
   peak_values: True
