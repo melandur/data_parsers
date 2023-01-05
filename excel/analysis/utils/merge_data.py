@@ -11,11 +11,11 @@ class MergeData:
     """Extracts data for given localities, dims, axes, orientations and metrics
     """
 
-    def __init__(self, src: str, dims: list, localities: list, axes: list, \
+    def __init__(self, src: str, dims: list, segments: list, axes: list, \
         orientations: list, metrics: list, peak_values: bool=True) -> None:
         self.src = src
         self.dims = dims
-        self.localities = localities
+        self.segments = segments
         self.axes = axes
         self.orientations = orientations
         self.metrics = metrics
@@ -24,44 +24,36 @@ class MergeData:
         self.table_name = None
 
     def __call__(self) -> pd.DataFrame:
+        tables = []
         # Identify relevant tables w.r.t. input parameters
-        ncols = self.identify_tables()
-        # Pre-initialize DataFrame
-        tables = pd.DataFrame(index=subjects, columns=ncols)
+        self.identify_tables()
         # Parse source directory to read in relevant tables
         subjects = os.listdir(self.src)
         for subject in subjects:
             for table in self.loop_files(subject):
                 if self.peak_values:
                     table = self.remove_time(table)
-                    tables.iloc[subject, :] = self.extract_peak_values(table, subject)
+                    tables.append = self.extract_peak_values(table, subject)
                 else:
                     logger.error('peak_values=False is not implemented yet.')
 
         logger.debug(tables)
         return tables
 
-    def identify_tables(self) -> int:
-        col_counter = 0
-        for locality in self.localities:
+    def identify_tables(self) -> None:
+        for segment in self.segments:
             for dim in self.dims:
-                for metric in self.metrics:
-                    # ROI analysis -> 4 cols per (dim, metric) combination
-                    if locality == 'roi':
-                        col_counter += 4
-                    # AHA analysis -> TODO
-                    elif locality == 'aha':
-                        logger.error('AHA analysis not implemented yet.')
-                    for axis in self.axes:
-                        for orientation in self.orientations:
-                            # Skip impossible and imprecise combinations
-                            if axis == 'short_axis' and orientation == 'longit' or \
-                                axis == 'long_axis' and orientation == 'circumf' or \
-                                axis == 'long_axis' and orientation == 'radial':
-                                continue
+                for axis in self.axes:
+                    for orientation in self.orientations:
+                        # Skip impossible and imprecise combinations
+                        if axis == 'short_axis' and orientation == 'longit' or \
+                            axis == 'long_axis' and orientation == 'circumf' or \
+                            axis == 'long_axis' and orientation == 'radial':
+                            continue
 
+                        for metric in self.metrics:
                             self.relevant.append(
-                                f'{locality}_{dim}_{axis}_{orientation}_{metric}')
+                                f'{segment}_{dim}_{axis}_{orientation}_{metric}')
         
     def loop_files(self, subject) -> pd.DataFrame:
         for root, _, files in os.walk(os.path.join(self.src, subject)):            
@@ -93,4 +85,4 @@ class MergeData:
         # Merge info cols with peak values
         table = pd.concat([table.iloc[:, :info_cols], peak], axis=1)
         table.rename(columns={0: f'peak_{self.table_name}'}, inplace=True)
-        self.tables[subject] = table
+        return table

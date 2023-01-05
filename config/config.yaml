@@ -12,8 +12,8 @@ dataset:
   dims: ['2d']
 
 analysis:
-  # which localities to use data from (global, aha or roi)
-  localities: ['roi']
+  # which segments to use data from (global, aha or roi)
+  segments: ['roi']
   # which axes to consider
   axes: ['long_axis', 'short_axis']
   # which orientations to consider

@@ -26,7 +26,7 @@ def analysis(config: DictConfig) -> None:
     src_dir = config.dataset.out_dir
     dims = config.dataset.dims
 
-    localities = config.analysis.localities
+    segments = config.analysis.segments
     axes = config.analysis.axes
     orientations = config.analysis.orientations
     metrics = config.analysis.metrics
@@ -39,7 +39,7 @@ def analysis(config: DictConfig) -> None:
     merger = MergeData(
         src=os.path.join(src_dir, '4_checked', dir_name),
         dims=dims,
-        localities=localities,
+        segments=segments,
         axes=axes,
         orientations=orientations,
         metrics=metrics,
