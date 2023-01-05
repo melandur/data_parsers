@@ -147,7 +147,7 @@ class ExtractSheets2Tables:
                         raise ValueError('axis is not defined')
 
     def _table_row_end_finder(self, start_row: int, column: int, criteria: str or None = None) -> int:
-        """Count relative to the start point the number of row until the table ends"""
+        """Count relative to the start point the number of rows until the table ends"""
         for row in range(start_row + 5, start_row + 400, 1):  # 400 is the maximum number of rows to search
             if self.save_intermediate:
                 if self.sheet.cell(row=row, column=column).value is criteria:
@@ -158,6 +158,21 @@ class ExtractSheets2Tables:
 
         raise AssertionError(
             f'End of table search range reached, super long table or wrong end criteria -> {start_row}'
+        )
+
+    def _table_col_end_finder(self, row: int, start_col: int, criteria: str or None = None) -> int:
+        """Count relative to the start point the number of cols until the table ends"""
+        for col in range(start_col, start_col + 100, 1):  # 100 is the maximum number of cols to search
+            if self.save_intermediate:
+                if self.sheet.cell(row=row+1, column=col).value is criteria:
+                    return col - start_col
+            else:
+                if self.sheet.iloc[row+2, col] is criteria:
+                    # logger.debug(self.sheet.iloc[row+2, :])
+                    return col
+
+        raise AssertionError(
+            f'End of table column search range reached, super long table or wrong end criteria -> {start_col}'
         )
 
     def extract_table(self, row: int) -> pd.DataFrame:
@@ -222,11 +237,15 @@ class ExtractSheets2Tables:
     def extract_aha_polarmap(self, row: int) -> pd.DataFrame:
         """Extract aha polarmap"""
         row_end = self._table_row_end_finder(row, 2, None)
+        col_end = self._table_col_end_finder(row, 2, None)
         
         if self.save_intermediate:
-            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:R')
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, ncols=col_end)
         else:
-            df = self.sheet.iloc[row+2:row+row_end, 1:18]
+            df = self.sheet.iloc[row+2:row+row_end, 1:col_end]
+
+        logger.debug(f'Row end {row_end} and col end {col_end}')
+        logger.debug(f'\n{df}')
 
         if 'short' in self.data_name:
             axis = 'circumf'
