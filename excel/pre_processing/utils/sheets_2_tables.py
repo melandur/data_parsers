@@ -204,79 +204,6 @@ class ExtractSheets2Tables:
         else:
             self.tables[self.subject_name][self.dim][f'{self.subject_name}_{self.data_name}'] = df
 
-    def extract_roi_polarmap(self, row: int) -> pd.DataFrame:
-        """Extract roi polarmap"""
-        row_end = self._table_row_end_finder(row, 2, None)
-
-        if self.save_intermediate:
-            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:S')
-        else:
-            df = self.sheet.iloc[row+2:row+row_end, 1:19]
-        df.columns = [
-            'slices',
-            'roi',
-            'peak_strain_radial_%',
-            'peak_strain_circumf_%',
-            'time_to_peak_1_radial_ms',
-            'time_to_peak_1_circumf_ms',
-            'peak_systolic_strain_rate_radial_1/s',
-            'peak_systolic_strain_rate_circumf_1/s',
-            'peak_diastolic_strain_rate_radial_1/s',
-            'peak_diastolic_strain_rate_circumf_1/s',
-            'peak_displacement_radial_mm',
-            'peak_displacement_circumf_mm',
-            'time_to_peak_2_radial_ms',
-            'time_to_peak_2_circumf_ms',
-            'peak_systolic_velocity_radial_mm/s',
-            'peak_systolic_velocity_circumf_deg/s',
-            'peak_diastolic_velocity_radial_mm/s',
-            'peak_diastolic_velocity_circumf_deg/s',
-        ]
-        return df
-
-    def extract_aha_polarmap(self, row: int) -> pd.DataFrame:
-        """Extract aha polarmap"""
-        row_end = self._table_row_end_finder(row, 2, None)
-        col_end = self._table_col_end_finder(row, 2, None)
-        
-        if self.save_intermediate:
-            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, ncols=col_end)
-        else:
-            df = self.sheet.iloc[row+2:row+row_end, 1:col_end]
-
-        logger.debug(f'Row end {row_end} and col end {col_end}')
-        logger.debug(f'\n{df}')
-
-        if 'short' in self.data_name:
-            axis = 'circumf'
-            unit = 'deg'
-        elif 'long' in self.data_name:
-            axis = 'longit'
-            unit = 'mm'
-        else:
-            raise ValueError('axis is not defined')
-
-        df.columns = [
-            'aha_segment',
-            'peak_strain_radial_%',
-            f'peak_strain_{axis}_%',
-            'time_to_peak_1_radial_ms',
-            f'time_to_peak_1_{axis}_ms',
-            'peak_systolic_strain_rate_radial_1/s',
-            f'peak_systolic_strain_rate_{axis}_1/s',
-            'peak_diastolic_strain_rate_radial_1/s',
-            f'peak_diastolic_strain_rate_{axis}_1/s',
-            'peak_displacement_radial_mm',
-            f'peak_displacement_{axis}_{unit}',
-            'time_to_peak_2_radial_ms',
-            f'time_to_peak_2_{axis}_ms',
-            'peak_systolic_velocity_radial_mm/s',
-            f'peak_systolic_velocity_{axis}_{unit}/s',
-            'peak_diastolic_velocity_radial_mm/s',
-            f'peak_diastolic_velocity_{axis}_{unit}/s',
-        ]
-        return df
-
     def rearrange_time_helper(self, df: pd.DataFrame) -> pd.DataFrame or None:
         """Rearrange time columns for 2d"""
         df = df.iloc[:, :-1]  # remove last column
@@ -344,58 +271,123 @@ class ExtractSheets2Tables:
             return df
         return None
 
-    def _last_column_is_empty(self, df: pd.DataFrame) -> bool:
-        """Check if the last column is empty"""
-        last_column = df.columns[-1]
-        if df[last_column].isna().sum() == len(df):
-            return True
-        return False
+    def extract_roi_polarmap(self, row: int) -> pd.DataFrame:
+        """Extract roi polarmap"""
+        row_end = self._table_row_end_finder(row, 2, None)
+        col_end = self._table_col_end_finder(row+1, 2, None)
+        
+        if self.save_intermediate:
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, ncols=col_end)
+        else:
+            df = self.sheet.iloc[row+2:row+row_end, 1:col_end]
+
+        df.columns = [
+            'slices',
+            'roi',
+            'peak_strain_radial_%',
+            'peak_strain_circumf_%',
+            'time_to_peak_1_radial_ms',
+            'time_to_peak_1_circumf_ms',
+            'peak_systolic_strain_rate_radial_1/s',
+            'peak_systolic_strain_rate_circumf_1/s',
+            'peak_diastolic_strain_rate_radial_1/s',
+            'peak_diastolic_strain_rate_circumf_1/s',
+            'peak_displacement_radial_mm',
+            'peak_displacement_circumf_mm',
+            'time_to_peak_2_radial_ms',
+            'time_to_peak_2_circumf_ms',
+            'peak_systolic_velocity_radial_mm/s',
+            'peak_systolic_velocity_circumf_deg/s',
+            'peak_diastolic_velocity_radial_mm/s',
+            'peak_diastolic_velocity_circumf_deg/s',
+        ]
+        return df
+
+    def extract_aha_polarmap(self, row: int) -> pd.DataFrame:
+        """Extract aha polarmap"""
+        row_end = self._table_row_end_finder(row, 2, None)
+        col_end = self._table_col_end_finder(row, 2, None)
+        
+        if self.save_intermediate:
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, ncols=col_end)
+        else:
+            df = self.sheet.iloc[row+2:row+row_end, 1:col_end]
+
+        if 'short' in self.data_name:
+            axis = 'circumf'
+            unit = 'deg'
+        elif 'long' in self.data_name:
+            axis = 'longit'
+            unit = 'mm'
+        else:
+            raise ValueError('axis is not defined')
+
+        df.columns = [
+            'aha_segment',
+            'peak_strain_radial_%',
+            f'peak_strain_{axis}_%',
+            'time_to_peak_1_radial_ms',
+            f'time_to_peak_1_{axis}_ms',
+            'peak_systolic_strain_rate_radial_1/s',
+            f'peak_systolic_strain_rate_{axis}_1/s',
+            'peak_diastolic_strain_rate_radial_1/s',
+            f'peak_diastolic_strain_rate_{axis}_1/s',
+            'peak_displacement_radial_mm',
+            f'peak_displacement_{axis}_{unit}',
+            'time_to_peak_2_radial_ms',
+            f'time_to_peak_2_{axis}_ms',
+            'peak_systolic_velocity_radial_mm/s',
+            f'peak_systolic_velocity_{axis}_{unit}/s',
+            'peak_diastolic_velocity_radial_mm/s',
+            f'peak_diastolic_velocity_{axis}_{unit}/s',
+        ]
+        return df
 
     def extract_aha_diagram(self, row: int) -> pd.DataFrame or None:
         """Extract aha diagram 2d"""
         row_end = self._table_row_end_finder(row, 2, None)
-
+        col_end = self._table_col_end_finder(row+1, 2, None)
+        
         if self.save_intermediate:
-            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, ncols=col_end)
         else:
-            df = self.sheet.iloc[row+1:row+row_end, 1:28]
+            df = self.sheet.iloc[row+1:row+row_end, 1:col_end]
 
         if not df.empty:
-            if self._last_column_is_empty(df):
-                df = self.rearrange_time_helper(df)
-                return df
+            df = self.rearrange_time_helper(df)
+            return df
         logger.warning(f'Empty/invalid dataframe for {self.subject_name} {self.mode} {self.data_name}')
         return None
 
     def extract_global_roi(self, row: int) -> pd.DataFrame or None:
         """Extract global roi 2d"""
         row_end = self._table_row_end_finder(row, 2, None)
-
+        col_end = self._table_col_end_finder(row+2, 2, None)
+        
         if self.save_intermediate:
-            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AC')
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, ncols=col_end)
         else:
-            df = self.sheet.iloc[row+1:row+row_end, 1:29]
+            df = self.sheet.iloc[row+2:row+row_end, 1:col_end]
 
         if not df.empty:
-            if self._last_column_is_empty(df):
-                df = self.rearrange_time_helper(df)
-                return df
+            df = self.rearrange_time_helper(df)
+            return df
         logger.warning(f'Empty/invalid dataframe for {self.subject_name} {self.mode} {self.data_name}')
         return None
 
     def extract_volume_3d(self, row: int) -> pd.DataFrame or None:
         """Extract volume 3d"""
         row_end = self._table_row_end_finder(row, 2, None)
-
+        col_end = self._table_col_end_finder(row+1, 2, None)
+        
         if self.save_intermediate:
-            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, usecols='B:AB')
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, ncols=col_end)
         else:
-            df = self.sheet.iloc[row+1:row+row_end, 1:28]
+            df = self.sheet.iloc[row+1:row+row_end, 1:col_end]
 
         if not df.empty:
-            if self._last_column_is_empty(df):
-                df = self.rearrange_time_volume(df)
-                return df
+            df = self.rearrange_time_volume(df)
+            return df
         logger.warning(f'Empty/invalid dataframe for {self.subject_name} {self.mode} {self.data_name}')
         return None
 
