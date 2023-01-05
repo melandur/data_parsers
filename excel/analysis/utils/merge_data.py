@@ -7,7 +7,7 @@ from loguru import logger
 import pandas as pd
 
 
-class ExtractData:
+class MergeData:
     """Extracts data for given localities, dims, axes, orientations and metrics
     """
 
@@ -27,7 +27,6 @@ class ExtractData:
         # Identify relevant tables w.r.t. input parameters
         ncols = self.identify_tables()
         # Pre-initialize DataFrame
-        # TODO: find a way to pre-define columns
         tables = pd.DataFrame(index=subjects, columns=ncols)
         # Parse source directory to read in relevant tables
         subjects = os.listdir(self.src)
@@ -55,25 +54,14 @@ class ExtractData:
                         logger.error('AHA analysis not implemented yet.')
                     for axis in self.axes:
                         for orientation in self.orientations:
-                            # Skip impossible combinations
+                            # Skip impossible and imprecise combinations
                             if axis == 'short_axis' and orientation == 'longit' or \
-                                axis == 'long_axis' and orientation == 'circumf':
+                                axis == 'long_axis' and orientation == 'circumf' or \
+                                axis == 'long_axis' and orientation == 'radial':
                                 continue
 
                             self.relevant.append(
                                 f'{locality}_{dim}_{axis}_{orientation}_{metric}')
-
-    # def predefine_ncols(self) -> int:
-    #     """Predefine the number of columns of the final dataframe
-
-    #     Returns:
-    #         int: number of columns
-    #     """
-    #     count = 0
-    #     for dim in self.dims:
-    #         # ROI analysis
-    #         if any(f'roi_{dim}' in table_name for table_name in self.relevant):
-    #             count += 4
         
     def loop_files(self, subject) -> pd.DataFrame:
         for root, _, files in os.walk(os.path.join(self.src, subject)):            

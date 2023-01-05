@@ -8,7 +8,7 @@ from loguru import logger
 from omegaconf import DictConfig
 
 from excel.global_helpers import checked_dir
-from excel.analysis.utils.extract_data import ExtractData
+from excel.analysis.utils.merge_data import MergeData
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config')
@@ -36,7 +36,7 @@ def analysis(config: DictConfig) -> None:
 
     # TODO: train and test paths/sets
     logger.info('Extracting data according to config parameters...')
-    extractor = ExtractData(
+    merger = MergeData(
         src=os.path.join(src_dir, '4_checked', dir_name),
         dims=dims,
         localities=localities,
@@ -45,7 +45,7 @@ def analysis(config: DictConfig) -> None:
         metrics=metrics,
         peak_values=peak_values
     )
-    data = extractor()
+    data = merger()
     logger.info('Data extraction finished.')
 
 
