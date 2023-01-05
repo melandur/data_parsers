@@ -65,7 +65,7 @@ def pre_processing(config: DictConfig) -> None:
         dst=dst,
         save_intermediate=save_intermediate,
         sheets=sheets
-    )
+    ) 
     tables = sheets_2_tables()
 
     if save_intermediate: # update paths
