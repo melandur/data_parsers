@@ -12,15 +12,19 @@ class MergeData:
     """Extracts data for given localities, dims, axes, orientations and metrics
     """
 
-    def __init__(self, src: str, dims: list, segments: list, axes: list, \
-        orientations: list, metrics: list, peak_values: bool=True) -> None:
+    def __init__(self, src: str, mdata_src: str, dims: list, segments: list, axes: list, \
+        orientations: list, metrics: list, peak_values: bool=True, metadata: list=None) -> None:
         self.src = src
+        self.mdata_src = mdata_src
         self.dims = dims
         self.segments = segments
         self.axes = axes
         self.orientations = orientations
         self.metrics = metrics
         self.peak_values = peak_values
+        # Always want subject ID
+        self.metadata = ['redcap_id'] + metadata
+
         self.relevant = []
         self.table_name = None
 
@@ -31,7 +35,7 @@ class MergeData:
         # Parse source directory to read in relevant tables
         subjects = os.listdir(self.src)
         for subject in subjects:
-            self.col_names = [] # TODO: not necessary for each patient
+            self.col_names = [] # OPT: not necessary for each patient
             self.subject_data = []
             for table in self.loop_files(subject):
                 if self.peak_values:
@@ -39,11 +43,28 @@ class MergeData:
                     self.extract_peak_values(table)
                 else:
                     logger.error('peak_values=False is not implemented yet.')
+                    raise NotImplementedError
+                    
             tables_list.append(self.subject_data)
 
+        # Build DataFrame from list (each row represents a subject)
         tables = pd.DataFrame(tables_list, index=subjects, columns=self.col_names)
+        # Add a subject column and reset index
         tables = tables.rename_axis('subject').reset_index()
-        logger.debug(tables)
+
+        # Read and clean metadata
+        mdata = pd.read_excel(self.mdata_src)
+        mdata = mdata[self.metadata]
+        mdata = mdata[mdata['redcap_id'].notna()] # remove rows without redcap_id
+        mdata = mdata.rename(columns={'redcap_id': 'subject'})
+        mdata['subject'] = mdata['subject'].astype(int)
+        tables['subject'] = tables['subject'].astype(int)
+
+        # Merge the cvi42 data with available metadata
+        tables = tables.merge(mdata, how='left', on='subject')
+
+        # TODO: deal with missing metadata
+
         return tables
 
     def identify_tables(self) -> None:
@@ -51,7 +72,7 @@ class MergeData:
             for dim in self.dims:
                 for axis in self.axes:
                     for orientation in self.orientations:
-                        # Skip impossible and imprecise combinations
+                        # Skip impossible or imprecise combinations
                         if axis == 'short_axis' and orientation == 'longit' or \
                             axis == 'long_axis' and orientation == 'circumf' or \
                             axis == 'long_axis' and orientation == 'radial':
@@ -73,17 +94,19 @@ class MergeData:
                         table = pd.read_excel(file_path)
                         yield table
 
-    def remove_time(self, table) -> None:
+    def remove_time(self, table) -> pd.DataFrame:
         return table[table.columns.drop(list(table.filter(regex='time')))]
 
     def extract_peak_values(self, table) -> None:
         # AHA data contain one info col, ROI data contains two info cols
         info_cols = 1 if 'aha' in self.table_name else 2
 
+        # Ensure consistent naming between short and long axis
+        if 'long_axis' in self.table_name:
+            table = table.rename(columns={'series, slice': 'slice'})
+
+        # ROI analysis
         if 'roi' in self.table_name:
-            # Ensure consistent naming between short and long axis
-            if 'long_axis' in self.table_name:
-                table = table.rename(columns={'series, slice': 'slice'})
             # Remove slice-wise global rows
             table = table.drop(table[(table.roi == 'global') & (table.slice != 'all slices')].index)
             # Keep only global, endo, epi ROI

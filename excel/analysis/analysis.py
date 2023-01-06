@@ -24,6 +24,7 @@ def analysis(config: DictConfig) -> None:
     """    
     # Parse some config parameters
     src_dir = config.dataset.out_dir
+    mdata_src = config.dataset.mdata_src
     dims = config.dataset.dims
 
     segments = config.analysis.segments
@@ -31,6 +32,7 @@ def analysis(config: DictConfig) -> None:
     orientations = config.analysis.orientations
     metrics = config.analysis.metrics
     peak_values = config.analysis.peak_values
+    metadata = config.analysis.metadata
 
     dir_name = checked_dir(dims)
 
@@ -38,12 +40,14 @@ def analysis(config: DictConfig) -> None:
     logger.info('Extracting data according to config parameters...')
     merger = MergeData(
         src=os.path.join(src_dir, '4_checked', dir_name),
+        mdata_src=mdata_src,
         dims=dims,
         segments=segments,
         axes=axes,
         orientations=orientations,
         metrics=metrics,
-        peak_values=peak_values
+        peak_values=peak_values,
+        metadata=metadata
     )
     data = merger()
     logger.info('Data extraction finished.')
