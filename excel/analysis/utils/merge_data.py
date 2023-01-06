@@ -42,6 +42,8 @@ class MergeData:
             tables_list.append(self.subject_data)
 
         tables = pd.DataFrame(tables_list, index=subjects, columns=self.col_names)
+        tables = tables.rename_axis('subject').reset_index()
+        logger.debug(tables)
         return tables
 
     def identify_tables(self) -> None:
@@ -83,10 +85,10 @@ class MergeData:
             if 'long_axis' in self.table_name:
                 table = table.rename(columns={'series, slice': 'slice'})
             # Remove slice-wise global rows
-            table.drop(table[(table.roi == 'global') & (table.slice != 'all slices')].index, inplace=True)
+            table = table.drop(table[(table.roi == 'global') & (table.slice != 'all slices')].index)
             # Keep only global, endo, epi ROI
             to_keep = ['global', 'endo', 'epi']
-            table = table[table.roi.str.contains('global|endo|epi')==True]
+            table = table[table.roi.str.contains('|'.join(to_keep))==True]
 
         # Circumferential and longitudinal strain and strain rate peak at minimum value
         if 'strain' in self.table_name and ('circumf' in self.table_name or 'longit' in self.table_name):
