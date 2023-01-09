@@ -87,7 +87,7 @@ class MergeData:
             for file in files:
                 # Consider only relevant tables
                 for table_name in self.relevant:
-                    if file.endswith('.xlsx') and table_name in file:
+                    if file.endswith('.xlsx') and f'{table_name}_(' in file:
                         logger.info(f'Relevant table {table_name} found.')
                         self.table_name = table_name
                         file_path = os.path.join(root, file)
