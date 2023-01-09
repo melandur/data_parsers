@@ -8,6 +8,7 @@ from loguru import logger
 from omegaconf import DictConfig
 
 from excel.analysis.utils.merge_data import MergeData
+from excel.analysis.utils.exploration import ExploreData
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config')
@@ -34,8 +35,11 @@ def analysis(config: DictConfig) -> None:
     metadata = config.analysis.metadata
     experiment = config.analysis.experiment
     overwrite = config.analysis.overwrite
+    exploration = config.analysis.exploration
 
     # TODO: train and test paths/sets
+
+    # Data merging
     if os.path.isdir(os.path.join(src_dir, '5_merged')) and not overwrite:
         logger.info('Merged data available, moving directly to analysis.')
     else:
@@ -54,6 +58,17 @@ def analysis(config: DictConfig) -> None:
         )
         merger()
         logger.info('Data merging finished.')
+
+    # Data exploration
+    for expl in exploration:
+        logger.info(f'Performing {exploration} data exploration.')
+        explorer = ExploreData(
+            src=src_dir,
+            experiment=experiment,
+            exploration=expl
+        )
+
+        logger.info(f'{exploration} data exploration finished.')
 
 
 if __name__ == '__main__':

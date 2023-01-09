@@ -90,11 +90,12 @@ class MergeData:
                                 f'{segment}_{dim}_{axis}_{orientation}_{metric}')
         
     def loop_files(self, subject) -> pd.DataFrame:
-        for root, _, files in os.walk(os.path.join(self.checked_src, subject)):            
+        for root, _, files in os.walk(os.path.join(self.checked_src, subject)):      
             for file in files:
                 # Consider only relevant tables
                 for table_name in self.relevant:
                     if file.endswith('.xlsx') and f'{table_name}_(' in file:
+                        logger.info(f'Relevant table {table_name} found for subject {subject}.')
                         self.table_name = table_name
                         file_path = os.path.join(root, file)
                         table = pd.read_excel(file_path)

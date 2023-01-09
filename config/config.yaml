@@ -30,4 +30,6 @@ analysis:
   # experiment name (i.e. file name in which to store merged data)
   experiment: 'layer_analysis'
   # whether to overwrite merged data
-  overwrite: True
+  overwrite: False
+  # which types of data exploration to perform (if any)
+  exploration: ['PCA']
