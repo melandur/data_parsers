@@ -7,7 +7,6 @@ import hydra
 from loguru import logger
 from omegaconf import DictConfig
 
-from excel.global_helpers import checked_dir
 from excel.analysis.utils.merge_data import MergeData
 
 
@@ -33,24 +32,28 @@ def analysis(config: DictConfig) -> None:
     metrics = config.analysis.metrics
     peak_values = config.analysis.peak_values
     metadata = config.analysis.metadata
-
-    dir_name = checked_dir(dims)
+    experiment = config.analysis.experiment
+    overwrite = config.analysis.overwrite
 
     # TODO: train and test paths/sets
-    logger.info('Extracting data according to config parameters...')
-    merger = MergeData(
-        src=os.path.join(src_dir, '4_checked', dir_name),
-        mdata_src=mdata_src,
-        dims=dims,
-        segments=segments,
-        axes=axes,
-        orientations=orientations,
-        metrics=metrics,
-        peak_values=peak_values,
-        metadata=metadata
-    )
-    data = merger()
-    logger.info('Data extraction finished.')
+    if os.path.isdir(os.path.join(src_dir, '5_merged')) and not overwrite:
+        logger.info('Merged data available, moving directly to analysis.')
+    else:
+        logger.info('Merging data according to config parameters...')
+        merger = MergeData(
+            src=src_dir,
+            mdata_src=mdata_src,
+            dims=dims,
+            segments=segments,
+            axes=axes,
+            orientations=orientations,
+            metrics=metrics,
+            peak_values=peak_values,
+            metadata=metadata,
+            experiment=experiment
+        )
+        merger()
+        logger.info('Data merging finished.')
 
 
 if __name__ == '__main__':

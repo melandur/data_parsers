@@ -149,7 +149,7 @@ def anova(data_1, data_2):
 
 def mannwhitneyu_test(data_1, data_2):
     """
-    ################ Nonparametric Statistical Hypothesis Tests (use to compare data samples) ##############################
+    Nonparametric Statistical Hypothesis Tests (use to compare data samples)
 
     Mann-Whitney U Test (Tests whether the distributions of two independent samples are equal or not)
 
