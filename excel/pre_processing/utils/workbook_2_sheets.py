@@ -5,6 +5,7 @@ import openpyxl
 from loguru import logger
 from openpyxl import load_workbook
 from pandas import DataFrame
+from re import sub
 
 
 class ExtractWorkbook2Sheets:
@@ -63,9 +64,12 @@ class ExtractWorkbook2Sheets:
     def get_clean_sheet_name(sheet_name: str) -> str:
         """Get a clean sheet name"""
         if '_' in sheet_name:
-            return sheet_name.split('_')[1]  # get sheet name after '_'
+            sheet_name = sheet_name.split('_')[1]  # get sheet name after '_'
+            sheet_name = sub("[^0-9]", "", sheet_name) # remove non-numberic characters
+            return sheet_name
         if ' ' in sheet_name:
-            return sheet_name.split(' ')[1]  # get sheet name after ' '
+            sheet_name = sheet_name.split(' ')[1]  # get sheet name after '_'
+            sheet_name = sub("[^0-9]", "", sheet_name) # remove non-numberic characters
         return f'fix_me_{sheet_name}'
 
     @staticmethod
