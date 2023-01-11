@@ -30,8 +30,8 @@ def general_stats(data: pd.DataFrame, out_dir: str):
     data.plot(kind='box')
     plt.xticks(rotation=90)
     plt.tight_layout()
-    plt.show()
     plt.savefig(os.path.join(out_dir, 'box_plot.pdf'))
+    plt.show()
 
 # Normality test (check if data has a Gaussian distribution)
 def shapiro_test(data):
