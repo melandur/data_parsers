@@ -45,9 +45,7 @@ def pre_processing(config: DictConfig) -> None:
     # Extract one sheet per patient from the available raw workbooks
     # additionally removes any colour formatting
     sheets = {}
-    # for src_file in os.listdir(src_dir):
-    # for src_file in [os.path.join(src_dir, 'D. Strain_v3b_FlamBer_61-120.xlsx')]:
-    for src_file in [os.path.join(src_dir, 'c. Myocarditis_strain_Sophie#3.xlsx')]:
+    for src_file in os.listdir(src_dir):
         if src_file.endswith('.xlsx') and not src_file.startswith('.'):
             logger.info(f'File -> {src_file}')
             workbook_2_sheets = ExtractWorkbook2Sheets(

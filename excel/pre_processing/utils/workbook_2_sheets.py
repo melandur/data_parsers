@@ -70,6 +70,7 @@ class ExtractWorkbook2Sheets:
         if ' ' in sheet_name:
             sheet_name = sheet_name.split(' ')[1]  # get sheet name after '_'
             sheet_name = sub("[^0-9]", "", sheet_name) # remove non-numberic characters
+            return sheet_name
         return f'fix_me_{sheet_name}'
 
     @staticmethod

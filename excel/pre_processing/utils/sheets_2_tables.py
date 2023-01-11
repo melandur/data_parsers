@@ -160,15 +160,24 @@ class ExtractSheets2Tables:
             f'End of table search range reached, super long table or wrong end criteria -> {start_row}'
         )
 
-    def _table_col_end_finder(self, row: int, start_col: int, criteria: str or None = None) -> int:
+    def _table_col_end_finder(self, row: int) -> int:
         """Count relative to the start point the number of cols until the table ends"""
+        if self.mode == 'aha_diagram':
+            start_col = 2
+            row += 1
+        elif self.mode == 'global_roi':
+            start_col = 3
+        elif self.mode == 'volume':
+            start_col = 2
+            # TODO: check 3d tables
+            # logger.debug(f'\n{self.sheet.iloc[[row, row+2], start_col:10]}')
+
         for col in range(start_col, start_col + 100, 1):  # 100 is the maximum number of cols to search
             if self.save_intermediate:
-                if self.sheet.cell(row=row+1, column=col).value is criteria:
+                if self.sheet.cell(row=row+1, column=col).value is None:
                     return col - start_col
             else:
-                if self.sheet.iloc[row+2, col] is criteria:
-                    # logger.debug(self.sheet.iloc[row+2, :])
+                if self.sheet.iloc[row+2, col] is None or self.sheet.iloc[row, col] is not None:
                     return col
 
         raise AssertionError(
@@ -278,12 +287,12 @@ class ExtractSheets2Tables:
     def extract_roi_polarmap(self, row: int) -> pd.DataFrame:
         """Extract roi polarmap"""
         row_end = self._table_row_end_finder(row, 2, None)
-        col_end = self._table_col_end_finder(row+1, 2, None)
         
         if self.save_intermediate:
-            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, ncols=col_end)
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:S')
         else:
-            df = self.sheet.iloc[row+2:row+row_end, 1:col_end]
+            df = self.sheet.iloc[row+2:row+row_end, 1:19]
+
 
         df.columns = [
             'slices',
@@ -310,12 +319,11 @@ class ExtractSheets2Tables:
     def extract_aha_polarmap(self, row: int) -> pd.DataFrame:
         """Extract aha polarmap"""
         row_end = self._table_row_end_finder(row, 2, None)
-        col_end = self._table_col_end_finder(row, 2, None)
         
         if self.save_intermediate:
-            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, ncols=col_end)
+            df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:R')
         else:
-            df = self.sheet.iloc[row+2:row+row_end, 1:col_end]
+            df = self.sheet.iloc[row+2:row+row_end, 1:18]
 
         if 'short' in self.data_name:
             axis = 'circumf'
@@ -350,7 +358,7 @@ class ExtractSheets2Tables:
     def extract_aha_diagram(self, row: int) -> pd.DataFrame or None:
         """Extract aha diagram 2d"""
         row_end = self._table_row_end_finder(row, 2, None)
-        col_end = self._table_col_end_finder(row+1, 2, None)
+        col_end = self._table_col_end_finder(row)
         
         if self.save_intermediate:
             df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, ncols=col_end)
@@ -366,7 +374,7 @@ class ExtractSheets2Tables:
     def extract_global_roi(self, row: int) -> pd.DataFrame or None:
         """Extract global roi 2d"""
         row_end = self._table_row_end_finder(row, 2, None)
-        col_end = self._table_col_end_finder(row+2, 2, None)
+        col_end = self._table_col_end_finder(row)
         
         if self.save_intermediate:
             df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, ncols=col_end)
@@ -382,7 +390,7 @@ class ExtractSheets2Tables:
     def extract_volume_3d(self, row: int) -> pd.DataFrame or None:
         """Extract volume 3d"""
         row_end = self._table_row_end_finder(row, 2, None)
-        col_end = self._table_col_end_finder(row+1, 2, None)
+        col_end = self._table_col_end_finder(row)
         
         if self.save_intermediate:
             df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, ncols=col_end)
