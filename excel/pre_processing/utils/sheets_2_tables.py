@@ -166,11 +166,12 @@ class ExtractSheets2Tables:
             start_col = 2
             row += 1
         elif self.mode == 'global_roi':
-            start_col = 3
+            start_col = 4
+            row += 2
         elif self.mode == 'volume':
             start_col = 2
             # TODO: check 3d tables
-            # logger.debug(f'\n{self.sheet.iloc[[row, row+2], start_col:10]}')
+            # logger.debug(f'\n{self.sheet.iloc[[row, row+2], :10]}')
 
         for col in range(start_col, start_col + 100, 1):  # 100 is the maximum number of cols to search
             if self.save_intermediate:

@@ -1,3 +1,6 @@
+import os
+
+from loguru import logger
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import (
@@ -17,6 +20,13 @@ from scipy.stats import (
     wilcoxon,
 )
 
+
+def general_stats(data):
+    """
+    Display general statistics about the input data such as
+    mean, std, box plot for each variable
+    """
+    logger.debug('Hello from general stats')
 
 # Normality test (check if data has a Gaussian distribution)
 def shapiro_test(data):

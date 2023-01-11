@@ -6,6 +6,7 @@ import os
 import hydra
 from loguru import logger
 from omegaconf import DictConfig
+import pandas as pd
 
 from excel.analysis.utils.merge_data import MergeData
 from excel.analysis.utils.exploration import ExploreData
@@ -38,9 +39,10 @@ def analysis(config: DictConfig) -> None:
     exploration = config.analysis.exploration
 
     # TODO: train and test paths/sets
+    merged_dir = os.path.join(src_dir, '5_merged')
 
     # Data merging
-    if os.path.isdir(os.path.join(src_dir, '5_merged')) and not overwrite:
+    if os.path.isdir(merged_dir) and not overwrite:
         logger.info('Merged data available, moving directly to analysis.')
     else:
         logger.info('Merging data according to config parameters...')
@@ -59,16 +61,16 @@ def analysis(config: DictConfig) -> None:
         merger()
         logger.info('Data merging finished.')
 
-    # Data exploration
-    for expl in exploration:
-        logger.info(f'Performing {exploration} data exploration.')
-        explorer = ExploreData(
-            src=src_dir,
-            experiment=experiment,
-            exploration=expl
-        )
+    # Read in merged data
+    data = pd.read_excel(os.path.join(merged_dir, f'{experiment}.xlsx'))
 
-        logger.info(f'{exploration} data exploration finished.')
+    # Data exploration
+    explorer = ExploreData(
+        data=data,
+        experiment=experiment,
+        exploration=exploration
+    )
+    explorer()
 
 
 if __name__ == '__main__':
