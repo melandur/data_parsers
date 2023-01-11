@@ -50,7 +50,7 @@ class ExtractSheets2Tables:
                     for row in self.loop_row():
                         self.extract_table(row)
 
-                    logger.info(self.count)
+                    # logger.info(self.count)
         
         return self.tables
 
@@ -209,6 +209,10 @@ class ExtractSheets2Tables:
         df = df.iloc[:, :-1]  # remove last column
         # Drop completely empty rows and use first row as header in DataFrame
         df = df.dropna(axis=0, how='all')
+
+        if df.empty:
+            return None
+            
         if not self.save_intermediate:
             df = df.rename(columns=df.iloc[0]).drop(df.index[0]).reset_index(drop=True)
         header = df.columns.tolist()

@@ -85,6 +85,6 @@ class ExtractWorkbook2Sheets:
         """Load file"""
         if not self.src_file.startswith('.'):  # avoid loading hidden tmp file
             self.subject_name = self.src_file.strip('.xlsx')
-            return load_workbook(self.src_file, read_only=False, data_only=True, \
+            return load_workbook(self.src_file, read_only=True, data_only=True, \
                 keep_vba=False, keep_links=False)
         return None

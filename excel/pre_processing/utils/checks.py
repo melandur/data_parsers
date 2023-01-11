@@ -50,8 +50,8 @@ class SplitByCompleteness:
                 elif '3d' in self.dims and len(self.tables[subject]['3d']) != 13:
                     del self.tables[subject]
                     logger.info(f'Removed subject {subject} due to missing 3d tables.')
-                else:
-                    logger.info(f'Complete subject -> {subject}')
+                # else:
+                #     logger.info(f'Complete subject -> {subject}')
 
         return self.tables
 
