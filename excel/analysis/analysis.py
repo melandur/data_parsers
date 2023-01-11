@@ -39,10 +39,10 @@ def analysis(config: DictConfig) -> None:
     exploration = config.analysis.exploration
 
     # TODO: train and test paths/sets
-    merged_dir = os.path.join(src_dir, '5_merged')
+    merged_path = os.path.join(src_dir, '5_merged', f'{experiment}.xlsx')
 
     # Data merging
-    if os.path.isdir(merged_dir) and not overwrite:
+    if os.path.isfile(merged_path) and not overwrite:
         logger.info('Merged data available, moving directly to analysis.')
     else:
         logger.info('Merging data according to config parameters...')
@@ -62,15 +62,20 @@ def analysis(config: DictConfig) -> None:
         logger.info('Data merging finished.')
 
     # Read in merged data
-    data = pd.read_excel(os.path.join(merged_dir, f'{experiment}.xlsx'))
+    data = pd.read_excel(merged_path, index_col=0)
 
     # Data exploration
-    explorer = ExploreData(
-        data=data,
-        experiment=experiment,
-        exploration=exploration
-    )
-    explorer()
+    if exploration:
+        expl_dir = os.path.join(src_dir, '6_exploration')
+        os.makedirs(expl_dir, exist_ok=True)
+
+        explorer = ExploreData(
+            data=data,
+            experiment=experiment,
+            exploration=exploration,
+            out_dir=expl_dir
+        )
+        explorer()
 
 
 if __name__ == '__main__':

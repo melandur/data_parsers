@@ -21,6 +21,6 @@ class ExploreData:
             logger.info(f'Performing {expl} data exploration.')
             
             stats_func = getattr(statistics, expl)
-            stats_func()
+            stats_func(self.data, self.out_dir)
 
             logger.info(f'{expl} data exploration finished.')

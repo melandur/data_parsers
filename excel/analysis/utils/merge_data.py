@@ -54,8 +54,6 @@ class MergeData:
             tables_list.append(self.subject_data)
 
         # Build DataFrame from list (each row represents a subject)
-        logger.debug(tables_list[0])
-        logger.debug(self.col_names)
         tables = pd.DataFrame(tables_list, index=subjects, columns=self.col_names)
         # Add a subject column and reset index
         tables = tables.rename_axis('subject').reset_index()
@@ -97,7 +95,7 @@ class MergeData:
                 # Consider only relevant tables
                 for table_name in self.relevant:
                     if file.endswith('.xlsx') and f'{table_name}_(' in file:
-                        logger.info(f'Relevant table {table_name} found for subject {subject}.')
+                        # logger.info(f'Relevant table {table_name} found for subject {subject}.')
                         self.table_name = table_name
                         file_path = os.path.join(root, file)
                         table = pd.read_excel(file_path)
@@ -147,4 +145,4 @@ class MergeData:
     def save_tables(self, tables) -> None:
         file_path = os.path.join(self.src, '5_merged', f'{self.experiment}.xlsx')
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        tables.to_excel(file_path, index=True)
+        tables.to_excel(file_path, index=False)

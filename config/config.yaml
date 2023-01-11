@@ -32,4 +32,4 @@ analysis:
   # whether to overwrite merged data
   overwrite: False
   # which types of data exploration to perform (if any)
-  exploration: ['general_stats', 'PCA']
+  exploration: ['general_stats']

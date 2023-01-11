@@ -2,6 +2,7 @@ import os
 
 from loguru import logger
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 from scipy.stats import (
     anderson,
@@ -21,12 +22,16 @@ from scipy.stats import (
 )
 
 
-def general_stats(data):
+def general_stats(data: pd.DataFrame, out_dir: str):
     """
     Display general statistics about the input data such as
     mean, std, box plot for each variable
     """
-    logger.debug('Hello from general stats')
+    data.plot(kind='box')
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.show()
+    plt.savefig(os.path.join(out_dir, 'box_plot.pdf'))
 
 # Normality test (check if data has a Gaussian distribution)
 def shapiro_test(data):
