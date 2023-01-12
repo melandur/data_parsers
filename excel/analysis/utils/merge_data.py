@@ -90,12 +90,13 @@ class MergeData:
                                 f'{segment}_{dim}_{axis}_{orientation}_{metric}')
         
     def loop_files(self, subject) -> pd.DataFrame:
-        for root, _, files in os.walk(os.path.join(self.checked_src, subject)):      
+        for root, _, files in os.walk(os.path.join(self.checked_src, subject)): 
+            files.sort() # sort files for consistent order of cols among subjects
             for file in files:
                 # Consider only relevant tables
                 for table_name in self.relevant:
                     if file.endswith('.xlsx') and f'{table_name}_(' in file:
-                        # logger.info(f'Relevant table {table_name} found for subject {subject}.')
+                        logger.info(f'Relevant table {table_name} found for subject {subject}.')
                         self.table_name = table_name
                         file_path = os.path.join(root, file)
                         table = pd.read_excel(file_path)
@@ -134,9 +135,7 @@ class MergeData:
         # ROI analysis -> group by global/endo/epi
         if 'roi' in self.table_name:
             # Remove slice-wise global rows
-            logger.debug(f'\n{self.table_name}\n{table}')
             table = table.groupby(by='roi', sort=False).agg('mean', numeric_only=True)
-            logger.debug(f'\n{table}')
 
         # Store column names for later
         for segment in to_keep:
