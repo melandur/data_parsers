@@ -73,8 +73,10 @@ def analysis(config: DictConfig) -> None:
             data=data,
             experiment=experiment,
             exploration=exploration,
-            out_dir=expl_dir
-        )
+            out_dir=expl_dir,
+            remove_meta=True, # might want to add config param
+            metadata=metadata
+        )   
         explorer()
 
 

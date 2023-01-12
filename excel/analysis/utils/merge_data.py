@@ -134,11 +134,15 @@ class MergeData:
         # ROI analysis -> group by global/endo/epi
         if 'roi' in self.table_name:
             # Remove slice-wise global rows
+            logger.debug(f'\n{self.table_name}\n{table}')
             table = table.groupby(by='roi', sort=False).agg('mean', numeric_only=True)
+            logger.debug(f'\n{table}')
 
         # Store column names for later
         for segment in to_keep:
-            self.col_names.append(f'peak_{segment}_{self.table_name}')
+            orientation = [o for o in self.orientations if o in self.table_name][0]
+            metric = [m for m in self.metrics if m in self.table_name][0]
+            self.col_names.append(f'{segment}_{orientation}_{metric}')
 
         self.subject_data += list(table.iloc[:, 0])
 

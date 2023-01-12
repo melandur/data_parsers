@@ -2,6 +2,7 @@ import os
 
 from loguru import logger
 import matplotlib.pyplot as plt
+import seaborn as sns
 import pandas as pd
 import numpy as np
 from scipy.stats import (
@@ -27,10 +28,16 @@ def general_stats(data: pd.DataFrame, out_dir: str):
     Display general statistics about the input data such as
     mean, std, box plot for each variable
     """
-    data.plot(kind='box')
-    plt.xticks(rotation=90)
+    # Box plot for each feature
+    sns.boxplot(data=data, orient='h', meanline=True, showmeans=True)
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, 'box_plot.pdf'))
+    # plt.show()
+
+    # Plot distribution for each feature
+    sns.displot(data=data, kind='kde')
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, 'dis_plot.pdf'))
     plt.show()
 
 # Normality test (check if data has a Gaussian distribution)
