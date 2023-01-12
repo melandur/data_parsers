@@ -96,7 +96,7 @@ class MergeData:
                 # Consider only relevant tables
                 for table_name in self.relevant:
                     if file.endswith('.xlsx') and f'{table_name}_(' in file:
-                        logger.info(f'Relevant table {table_name} found for subject {subject}.')
+                        # logger.info(f'Relevant table {table_name} found for subject {subject}.')
                         self.table_name = table_name
                         file_path = os.path.join(root, file)
                         table = pd.read_excel(file_path)
