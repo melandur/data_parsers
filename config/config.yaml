@@ -33,6 +33,6 @@ analysis:
   overwrite: False
   # whether to overwrite metadata 
   # (without performing entire merging process again - unless overwrite=True)
-  update_metadata: True
+  update_metadata: False
   # which types of data exploration to perform (if any)
   exploration: ['univariate_analysis']

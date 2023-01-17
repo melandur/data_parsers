@@ -24,7 +24,7 @@ class ExploreData:
             logger.info(f'Performing {expl} data exploration.')
             # Remove meta data from plots if desired
             if self.remove_meta:
-                self.data = self.data.drop(self.metadata, axis=1)
+                self.data = self.data.drop(self.metadata[:3], axis=1)
             
             stats_func = getattr(statistics, expl)
             stats_func(self.data, self.out_dir)
