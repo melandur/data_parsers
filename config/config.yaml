@@ -5,8 +5,8 @@ defaults:
 ### add global default parameter values below
 dataset:
   # metadata source directory
-  mdata_src: '/home/sebalzer/Documents/Mike_init/Final_Regional_Database.xlsx'
-  # mdata_src: '/mnt/c/Users/Sebastian/OneDrive/Dokumente/Insel/Final_Regional_Database.xlsx'
+  # mdata_src: '/home/sebalzer/Documents/Mike_init/Final_Regional_Database.xlsx'
+  mdata_src: '/mnt/c/Users/Sebastian/OneDrive/Dokumente/Insel/Final_Regional_Database.xlsx'
   # whether to save intermediate steps
   save_intermediate: False
   # whether to save the final pre-processed tables (only relevant if save_intermediate is False)
@@ -26,10 +26,13 @@ analysis:
   # whether to reduce data to peak values (i.e. lose time component)
   peak_values: True
   # which metadata to include
-  metadata: ['sex_0_male_1_female', 'age', 'bmi']
+  metadata: ['sex_0_male_1_female', 'age', 'bmi', 'mace']
   # experiment name (i.e. file name in which to store merged data)
   experiment: 'layer_analysis'
   # whether to overwrite merged data
-  overwrite: True
+  overwrite: False
+  # whether to overwrite metadata 
+  # (without performing entire merging process again - unless overwrite=True)
+  update_metadata: True
   # which types of data exploration to perform (if any)
-  exploration: ['general_stats']
+  exploration: ['univariate_analysis']

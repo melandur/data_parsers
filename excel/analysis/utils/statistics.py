@@ -23,10 +23,9 @@ from scipy.stats import (
 )
 
 
-def general_stats(data: pd.DataFrame, out_dir: str):
+def univariate_analysis(data: pd.DataFrame, out_dir: str): 
     """
-    Display general statistics about the input data such as
-    mean, std, box plot for each variable
+    Perform univariate analysis (box plots and distributions)
     """
     # Box plot for each feature
     sns.boxplot(data=data, orient='h', meanline=True, showmeans=True)
@@ -39,6 +38,12 @@ def general_stats(data: pd.DataFrame, out_dir: str):
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, 'dis_plot.pdf'))
     plt.show()
+
+def bivariate_analysis(data: pd.DataFrame, out_dir: str):
+    """
+    Perform bivariate analysis
+    """
+    
 
 # Normality test (check if data has a Gaussian distribution)
 def shapiro_test(data):

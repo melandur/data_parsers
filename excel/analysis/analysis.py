@@ -9,6 +9,7 @@ from omegaconf import DictConfig
 import pandas as pd
 
 from excel.analysis.utils.merge_data import MergeData
+from excel.analysis.utils.update_metadata import UpdateMetadata
 from excel.analysis.utils.exploration import ExploreData
 
 
@@ -36,6 +37,7 @@ def analysis(config: DictConfig) -> None:
     metadata = config.analysis.metadata
     experiment = config.analysis.experiment
     overwrite = config.analysis.overwrite
+    update_metadata = config.analysis.update_metadata
     exploration = config.analysis.exploration
 
     # TODO: train and test paths/sets
@@ -43,7 +45,7 @@ def analysis(config: DictConfig) -> None:
 
     # Data merging
     if os.path.isfile(merged_path) and not overwrite:
-        logger.info('Merged data available, moving directly to analysis.')
+        logger.info('Merged data available, skipping merge step...')
     else:
         logger.info('Merging data according to config parameters...')
         merger = MergeData(
@@ -62,7 +64,23 @@ def analysis(config: DictConfig) -> None:
         logger.info('Data merging finished.')
 
     # Read in merged data
-    data = pd.read_excel(merged_path, index_col=0)
+    data = pd.read_excel(merged_path)
+
+    # Update metadata if desired (only makes sense if overwrite=False)
+    if not overwrite and update_metadata:
+        logger.info('Updating metadata as requested...')
+        updater = UpdateMetadata(
+            src=src_dir,
+            data=data,
+            mdata_src=mdata_src,
+            metadata=metadata,
+            experiment=experiment
+        )
+        data = updater()
+        logger.info('Metadata update finished.')
+
+    # Use subject ID as index column
+    data = data.set_index('subject')
 
     # Data exploration
     if exploration:

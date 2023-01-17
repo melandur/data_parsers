@@ -28,7 +28,8 @@ class MergeData:
         self.metrics = metrics
         self.peak_values = peak_values
         # Always want subject ID
-        self.metadata = ['redcap_id'] + metadata
+        # self.metadata = ['redcap_id'] + metadata
+        self.metadata = ['pat_id'] + metadata
         self.experiment = experiment
 
         self.relevant = []
@@ -68,8 +69,6 @@ class MergeData:
 
         # Merge the cvi42 data with available metadata
         tables = tables.merge(mdata, how='left', on='subject')
-
-        # TODO: deal with missing metadata
 
         # Save the tables for analysis
         self.save_tables(tables)
@@ -145,7 +144,4 @@ class MergeData:
 
         self.subject_data += list(table.iloc[:, 0])
 
-    def save_tables(self, tables) -> None:
-        file_path = os.path.join(self.src, '5_merged', f'{self.experiment}.xlsx')
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        tables.to_excel(file_path, index=False)
+    
