@@ -7,6 +7,7 @@ from loguru import logger
 import pandas as pd
 
 from excel.analysis.utils import statistics
+from excel.analysis.utils import variate_analysis
 
 
 class ExploreData:
@@ -26,7 +27,7 @@ class ExploreData:
             if self.remove_meta:
                 self.data = self.data.drop(self.metadata[:3], axis=1)
             
-            stats_func = getattr(statistics, expl)
+            stats_func = getattr(variate_analysis, expl)
             stats_func(self.data, self.out_dir)
 
             logger.info(f'{expl} data exploration finished.')
