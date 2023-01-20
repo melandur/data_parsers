@@ -26,7 +26,7 @@ analysis:
   # whether to reduce data to peak values (i.e. lose time component)
   peak_values: True
   # which metadata to include
-  metadata: ['sex_0_male_1_female', 'age', 'bmi', 'mace']
+  metadata: ['sex_0_male_1_female', 'age', 'bmi', 'mace', 'macefree_time', 'lv_ef']
   # experiment name (i.e. file name in which to store merged data)
   experiment: 'layer_analysis'
   # whether to overwrite merged data
@@ -36,3 +36,5 @@ analysis:
   update_metadata: False
   # which types of data exploration to perform (if any)
   exploration: ['univariate_analysis']
+  # determines reach of the whiskers in box plots and the range for outlier detection
+  whis: 1

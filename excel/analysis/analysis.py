@@ -39,6 +39,7 @@ def analysis(config: DictConfig) -> None:
     overwrite = config.analysis.overwrite
     update_metadata = config.analysis.update_metadata
     exploration = config.analysis.exploration
+    whis = config.analysis.whis
 
     # TODO: train and test paths/sets
     merged_path = os.path.join(src_dir, '5_merged', f'{experiment}.xlsx')
@@ -93,7 +94,8 @@ def analysis(config: DictConfig) -> None:
             exploration=exploration,
             out_dir=expl_dir,
             remove_meta=True, # might want to add config param
-            metadata=metadata
+            metadata=metadata,
+            whis=whis
         )   
         explorer()
 
