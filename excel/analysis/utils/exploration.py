@@ -8,6 +8,7 @@ import pandas as pd
 
 from excel.analysis.utils import statistics
 from excel.analysis.utils import analyse_variables
+from excel.analysis.utils import dim_reduction
 
 
 class ExploreData:
@@ -36,7 +37,18 @@ class ExploreData:
         for expl in self.exploration:
             logger.info(f'Performing {expl} data exploration.')
             
-            stats_func = getattr(analyse_variables, expl)
-            stats_func(self.data, self.out_dir, self.metadata, self.whis)
+            try:
+                stats_func = getattr(analyse_variables, expl)
+                stats_func(self.data, self.out_dir, self.metadata, self.whis)
+                continue
+            except AttributeError:
+                pass
+
+            try:
+                stats_func = getattr(dim_reduction, expl)
+                stats_func(self.data, self.out_dir, self.metadata)
+                continue
+            except AttributeError:
+                raise NotImplementedError
 
             logger.info(f'{expl} data exploration finished.')

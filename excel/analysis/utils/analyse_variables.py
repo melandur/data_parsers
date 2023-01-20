@@ -20,6 +20,7 @@ def univariate_analysis(data: pd.DataFrame, out_dir: str, metadata: list, whis: 
 
     # Box plot for each feature w.r.t. MACE
     data_long = to_analyse.melt(id_vars=['mace'])
+    logger.debug(data_long)
     sns.boxplot(data=data_long, x='value', y='variable', hue='mace', \
         orient='h', meanline=True, showmeans=True, whis=whis)
     plt.axvline(x=0, alpha=0.7, color='grey', linestyle='--')
@@ -76,7 +77,7 @@ def detect_outliers(data: pd.DataFrame, out_dir: str, whis: float, remove:bool, 
         # high_data = high_data.drop(high_data.between(lower_limit, upper_limit).all(), axis=0)
 
         # Add metadata again
-        high_data = pd.concat((high_data, mdata), axis=1).sort_values('mace')
+        high_data = pd.concat((high_data, mdata), axis=1).sort_values(by=['subject'])
         
         # Highlight outliers in table
         high_data.style.apply(lambda _: highlight(df=high_data, lower_limit=lower_limit, \
@@ -95,7 +96,6 @@ def detect_outliers(data: pd.DataFrame, out_dir: str, whis: float, remove:bool, 
         # TODO: deal with removed outliers (e.g. remove patient)
 
     return data
-
 
 def highlight(df: pd.DataFrame, lower_limit: np.array, upper_limit: np.array):
     style_df = pd.DataFrame('', index=df.index, columns=df.columns)

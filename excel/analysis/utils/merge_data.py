@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 
 from excel.global_helpers import checked_dir
+from excel.analysis.utils.helpers import save_tables
 
 
 class MergeData:
@@ -62,16 +63,17 @@ class MergeData:
         # Read and clean metadata
         mdata = pd.read_excel(self.mdata_src)
         mdata = mdata[self.metadata]
-        mdata = mdata[mdata['redcap_id'].notna()] # remove rows without redcap_id
-        mdata = mdata.rename(columns={'redcap_id': 'subject'})
+        mdata = mdata[mdata['pat_id'].notna()] # remove rows without redcap_id
+        mdata = mdata.rename(columns={'pat_id': 'subject'})
         mdata['subject'] = mdata['subject'].astype(int)
         tables['subject'] = tables['subject'].astype(int)
 
         # Merge the cvi42 data with available metadata
         tables = tables.merge(mdata, how='left', on='subject')
+        tables = tables.sort_values(by='subject')
 
         # Save the tables for analysis
-        self.save_tables(tables)
+        save_tables(src=self.src, experiment=self.experiment, tables=tables)
 
     def identify_tables(self) -> None:
         for segment in self.segments:
