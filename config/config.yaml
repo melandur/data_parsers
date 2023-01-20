@@ -36,5 +36,9 @@ analysis:
   update_metadata: False
   # which types of data exploration to perform (if any)
   exploration: ['univariate_analysis']
+  # whether to remove outliers
+  remove_outliers: False 
+  # whether to investigate outliers
+  investigate_outliers: False
   # determines reach of the whiskers in box plots and the range for outlier detection
   whis: 1

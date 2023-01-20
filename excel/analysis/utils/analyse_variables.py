@@ -48,8 +48,8 @@ def bivariate_analysis(to_analyse: pd.DataFrame, out_dir: str, metadata:list):
     """
     pass
 
-def detect_outliers(data: pd.DataFrame, out_dir: str, whis: float=1.5, remove: bool=True, \
-    investigate: bool=False, metadata: list=[]):
+def detect_outliers(data: pd.DataFrame, out_dir: str, whis: float, remove:bool, \
+    investigate: bool, metadata: list=[]):
     """Detect outliers in the data, optionally removing or further investigating them
 
     Args:

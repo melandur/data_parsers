@@ -39,6 +39,8 @@ def analysis(config: DictConfig) -> None:
     overwrite = config.analysis.overwrite
     update_metadata = config.analysis.update_metadata
     exploration = config.analysis.exploration
+    remove_outliers = config.analysis.remove_outliers
+    investigate_outliers = config.analysis.investigate_outliers
     whis = config.analysis.whis
 
     # TODO: train and test paths/sets
@@ -93,7 +95,8 @@ def analysis(config: DictConfig) -> None:
             experiment=experiment,
             exploration=exploration,
             out_dir=expl_dir,
-            remove_meta=True, # might want to add config param
+            remove_outliers=remove_outliers,
+            investigate_outliers=investigate_outliers,
             metadata=metadata,
             whis=whis
         )   
