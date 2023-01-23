@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 
 def pca(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
@@ -62,4 +63,32 @@ def tsne(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
         metadata (list): list of metadata column names
         seed (int): random seed
     """
-    pass
+    for remove_mdata in [True, False]:
+
+        to_analyse = data.copy(deep=True)
+        to_analyse = to_analyse.dropna(how='any') # drop rows containing any NaN values
+
+        if remove_mdata:
+            # Split data and metadata
+            mdata = to_analyse[metadata]
+            to_analyse = to_analyse.drop(metadata, axis=1)
+            suffix = 'no_metadata'
+        else: # keep metadata
+            mdata = to_analyse[['mace']]
+            to_analyse = to_analyse.drop('mace', axis=1)
+            suffix = 'with_metadata'
+
+        # Perform t-SNE
+        tsne = TSNE(n_components=2, perplexity=50, random_state=seed)
+        analysis = tsne.fit_transform(to_analyse)
+        analysis = pd.DataFrame(analysis, index=to_analyse.index, columns=['tsne_1', 'tsne_2'])
+        analysis = pd.concat((analysis, mdata['mace']), axis=1)
+        logger.info(f'{len(analysis.index)} subjects ({suffix}).')
+
+        # Plot the transformed dataset
+        sns.lmplot(data=analysis, x='tsne_1', y='tsne_2', hue='mace', \
+            fit_reg=False, legend=True, scatter_kws={'s': 20})
+        # plt.tight_layout()
+        plt.title('t-SNE')
+        plt.savefig(os.path.join(out_dir, f'TSNE_{suffix}.pdf'), bbox_inches='tight')
+        plt.clf()
