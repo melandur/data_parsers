@@ -42,6 +42,7 @@ def analysis(config: DictConfig) -> None:
     remove_outliers = config.analysis.remove_outliers
     investigate_outliers = config.analysis.investigate_outliers
     whis = config.analysis.whis
+    seed = config.analysis.seed
 
     # TODO: train and test paths/sets
     merged_path = os.path.join(src_dir, '5_merged', f'{experiment}.xlsx')
@@ -98,8 +99,9 @@ def analysis(config: DictConfig) -> None:
             remove_outliers=remove_outliers,
             investigate_outliers=investigate_outliers,
             metadata=metadata,
-            whis=whis
-        )   
+            whis=whis,
+            seed=seed
+        )
         explorer()
 
 

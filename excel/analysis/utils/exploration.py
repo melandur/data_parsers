@@ -14,7 +14,7 @@ from excel.analysis.utils import dim_reduction
 class ExploreData:
     def __init__(self, data: pd.DataFrame, experiment: str, exploration: str, out_dir: str, \
         metadata: list, remove_outliers: bool=False, investigate_outliers: bool=False, \
-        whis: float=1.5) -> None:
+        whis: float=1.5, seed: int=0) -> None:
         # Correct some mace entries
         data[data['mace'] == 999] = 0
 
@@ -26,6 +26,7 @@ class ExploreData:
         self.remove_outliers = remove_outliers
         self.investigate_outliers = investigate_outliers
         self.whis = whis
+        self.seed = seed
 
     def __call__(self) -> None:        
         # Detect (and optionally remove or investigate) outliers
@@ -40,15 +41,15 @@ class ExploreData:
             try:
                 stats_func = getattr(analyse_variables, expl)
                 stats_func(self.data, self.out_dir, self.metadata, self.whis)
+                logger.info(f'{expl} data exploration finished.')
                 continue
             except AttributeError:
                 pass
 
             try:
                 stats_func = getattr(dim_reduction, expl)
-                stats_func(self.data, self.out_dir, self.metadata)
+                stats_func(self.data, self.out_dir, self.metadata, self.seed)
+                logger.info(f'{expl} data exploration finished.')
                 continue
             except AttributeError:
                 raise NotImplementedError
-
-            logger.info(f'{expl} data exploration finished.')
