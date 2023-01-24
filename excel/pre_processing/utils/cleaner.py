@@ -17,12 +17,13 @@ class TableCleaner:
     """Inter-/Extrapolate NaN rows or delete them"""
 
     def __init__(self, src: str, dst: str, save_intermediate: bool=True, \
-        dims: list=['2d'], tables: NestedDefaultDict=None) -> None:
+        dims: list=['2d'], tables: NestedDefaultDict=None, strict: bool=False) -> None:
         self.src = src
         self.dst = dst
         self.save_intermediate = save_intermediate
         self.dims = dims
         self.tables = tables
+        self.strict = strict
 
     def __call__(self) -> NestedDefaultDict:
         for subject in self.loop_subjects():
@@ -37,14 +38,6 @@ class TableCleaner:
                 else: # use dict of DataFrames
                     for table in self.tables[subject][dim]:
                         self.tables[subject][dim][table] = self.clean(subject, dim, table)
-
-        # Remove any dict entries with empty DataFrames
-        if not self.save_intermediate:
-            for subject in self.loop_subjects():
-                for dim in self.dims:
-                    filtered = {k: v for k, v in self.tables[subject][dim].items() if v is not None}
-                    self.tables[subject][dim].clear()
-                    self.tables[subject][dim].update(filtered)
 
         return self.tables
 
@@ -85,13 +78,10 @@ class TableCleaner:
             if any(df['peak_strain_rad_%'] == '--'):
                 df['peak_strain_rad_%'] = df['peak_strain_rad_%'].replace('--', np.nan)
 
-        # TODO: add inter- or extrapolation functionalities
-        # current version drops all rows/cols containing at least one NaN value
-        # might want to introduce flag to show whether any NaN values were present
-        # or how much data was removed
-        # nans = df.isna().sum()
-        df.dropna(inplace=True)
-        df = df.reset_index(drop=True)
+        # Only drop rows containing any nan value in strict mode
+        if self.strict:
+            df.dropna(inplace=True)
+            df = df.reset_index(drop=True)
 
         if df.empty:
             return None

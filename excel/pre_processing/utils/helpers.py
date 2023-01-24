@@ -29,6 +29,8 @@ class SaveTables:
         for subject in list(self.tables.keys()):
             for dim in self.dims:
                 for table_name, table in self.tables[subject][dim].items():
+                    if table is None:
+                        continue
                     self.save(table, subject, dim, table_name)
 
 

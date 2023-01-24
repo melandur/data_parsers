@@ -13,6 +13,9 @@ dataset:
   save_final: True
   # which data to include in the pre-processing/analysis
   dims: ['2d']
+  # strict behaviour for cleaner and checker 
+  # strict=False leads to fewer patients dropped and possible data imputation later
+  strict: False
 
 analysis:
   # which segments to use data from (global, aha or roi)

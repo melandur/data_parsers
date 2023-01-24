@@ -33,6 +33,7 @@ def pre_processing(config: DictConfig) -> None:
     save_intermediate = config.dataset.save_intermediate
     save_final = config.dataset.save_final
     dims = config.dataset.dims
+    strict = config.dataset.strict
 
     dir_name = checked_dir(dims)
 
@@ -46,6 +47,7 @@ def pre_processing(config: DictConfig) -> None:
     # additionally removes any colour formatting
     sheets = {}
     for src_file in os.listdir(src_dir):
+    # for src_file in [os.path.join(src_dir, 'D. Strain_v3b_FlamBer_61-120.xlsx')]:
         if src_file.endswith('.xlsx') and not src_file.startswith('.'):
             logger.info(f'File -> {src_file}')
             workbook_2_sheets = ExtractWorkbook2Sheets(
@@ -76,7 +78,8 @@ def pre_processing(config: DictConfig) -> None:
                 dst=dst,
                 save_intermediate=save_intermediate,
                 dims=dims,
-                tables=tables
+                tables=tables,
+                strict=strict
             )
             clean_tables = cleaner()
 
@@ -89,7 +92,8 @@ def pre_processing(config: DictConfig) -> None:
                 dst=dst,
                 save_intermediate=save_intermediate,
                 dims=dims,
-                tables=clean_tables
+                tables=clean_tables,
+                strict=strict
             )
             complete_tables = checker()
 

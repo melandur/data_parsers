@@ -11,19 +11,23 @@ class SplitByCompleteness:
     """Sort files by completeness"""
 
     def __init__(self, src: str, dst: str, save_intermediate: bool=True, \
-        dims: list=['2d'], tables: NestedDefaultDict=None) -> None:
+        dims: list=['2d'], tables: NestedDefaultDict=None, strict: bool=False) -> None:
         self.src = src
         self.dst = dst
         self.save_intermediate = save_intermediate
         self.dims = dims
         self.tables = tables
+        self.strict = strict
+
         self.count = 0
         self.memory = {}
         self.complete_files = {}
         self.missing_files = {}
 
         # Set target count according to requested dims
-        if '2d' in dims and '3d' in dims:
+        if not self.strict:
+            self.target_count = 1
+        elif '2d' in dims and '3d' in dims:
             self.target_count = 45
         elif '2d' in dims:
             self.target_count = 32
@@ -46,13 +50,13 @@ class SplitByCompleteness:
             # delete all subjects with missing tables in requested dims
             for subject in list(self.tables.keys()):
                 logger.info(f'Checking subject -> {subject}')
-                # Check whether all 32 2d and 13 3d tables are present
-                if '2d' in self.dims and len(self.tables[subject]['2d']) != 32:
+                # Check whether sufficient tables are present
+                count = 0
+                for dim in self.dims:
+                    count += len(self.tables[subject][dim])
+                if count < self.target_count:
                     del self.tables[subject]
-                    logger.info(f'Removed subject {subject} due to missing 2d tables.')
-                elif '3d' in self.dims and len(self.tables[subject]['3d']) != 13:
-                    del self.tables[subject]
-                    logger.info(f'Removed subject {subject} due to missing 3d tables.')
+                    logger.info(f'Removed subject {subject} due to missing tables.')
                 # else:
                 #     logger.info(f'Complete subject -> {subject}')
 
@@ -78,10 +82,10 @@ class SplitByCompleteness:
     def divide_cases(self) -> None:
         """Divide cases into complete and missing"""
         for case, counted_files in self.memory.items():
-            if counted_files == self.target_count:
-                self.complete_files[case] = counted_files
-            else:
+            if counted_files < self.target_count:
                 self.missing_files[case] = counted_files
+            else:
+                self.complete_files[case] = counted_files
 
     def move_files(self) -> None:
         """Move files to their destination folder"""
