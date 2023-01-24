@@ -2,8 +2,9 @@
 """
 
 import os
-from collections import defaultdict
 
+from collections import defaultdict
+from loguru import logger
 import pandas as pd
 
 
@@ -26,6 +27,7 @@ class SaveTables:
         self.tables = tables
 
     def __call__(self) -> None:
+        logger.info('Saving tables...')
         for subject in list(self.tables.keys()):
             for dim in self.dims:
                 for table_name, table in self.tables[subject][dim].items():
