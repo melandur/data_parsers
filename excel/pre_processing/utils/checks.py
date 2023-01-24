@@ -29,6 +29,9 @@ class SplitByCompleteness:
             self.target_count = 32
         elif '3d' in dims:
             self.target_count = 13
+        else:
+            logger.error('dims must contain 2d or 3d, check your config.yaml file')
+            raise NotImplementedError
 
     def __call__(self) -> NestedDefaultDict:
         if self.save_intermediate:
