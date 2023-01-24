@@ -29,6 +29,7 @@ class SaveTables:
     def __call__(self) -> None:
         logger.info('Saving tables...')
         for subject in list(self.tables.keys()):
+            logger.info(f'Saving tables for subject {subject}')
             for dim in self.dims:
                 for table_name, table in self.tables[subject][dim].items():
                     if table is None:
