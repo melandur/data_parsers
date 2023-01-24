@@ -79,7 +79,7 @@ def tsne(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
             suffix = 'with_metadata'
 
         # Perform t-SNE
-        tsne = TSNE(n_components=2, perplexity=50, random_state=seed)
+        tsne = TSNE(n_components=2, perplexity=30, random_state=seed)
         analysis = tsne.fit_transform(to_analyse)
         analysis = pd.DataFrame(analysis, index=to_analyse.index, columns=['tsne_1', 'tsne_2'])
         analysis = pd.concat((analysis, mdata['mace']), axis=1)

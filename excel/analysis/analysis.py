@@ -12,6 +12,11 @@ from excel.analysis.utils.merge_data import MergeData
 from excel.analysis.utils.update_metadata import UpdateMetadata
 from excel.analysis.utils.exploration import ExploreData
 
+# pd.set_option('display.max_rows', None)
+# pd.set_option('display.max_columns', None)
+# pd.set_option('display.width', None)
+# pd.set_option('display.max_colwidth', None)
+
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config')
 def analysis(config: DictConfig) -> None:

@@ -6,6 +6,8 @@ import os
 from loguru import logger
 import pandas as pd
 import numpy as np
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import SimpleImputer, IterativeImputer
 
 from excel.global_helpers import checked_dir
 from excel.analysis.utils.helpers import save_tables
@@ -17,7 +19,7 @@ class MergeData:
 
     def __init__(self, src: str, mdata_src: str, dims: list, segments: list, axes: list, \
         orientations: list, metrics: list, peak_values: bool=True, metadata: list=None, \
-        experiment: str='unnamed_experiment') -> None:
+        experiment: str='unnamed_experiment', impute: bool=True) -> None:
         self.src = src
         dir_name = checked_dir(dims)
         self.checked_src = os.path.join(src, '4_checked', dir_name)
@@ -29,9 +31,9 @@ class MergeData:
         self.metrics = metrics
         self.peak_values = peak_values
         # Always want subject ID
-        # self.metadata = ['redcap_id'] + metadata
-        self.metadata = ['pat_id'] + metadata
+        self.metadata = ['redcap_id', 'pat_id'] + metadata
         self.experiment = experiment
+        self.impute = impute
 
         self.relevant = []
         self.table_name = None
@@ -63,14 +65,34 @@ class MergeData:
         # Read and clean metadata
         mdata = pd.read_excel(self.mdata_src)
         mdata = mdata[self.metadata]
-        mdata = mdata[mdata['pat_id'].notna()] # remove rows without redcap_id
+        if 'mace' in self.metadata:
+            mdata[mdata['mace'] == 999] = 0 # correct some mace entries
+        # Clean subject IDs
+        mdata['pat_id'].fillna(mdata['redcap_id'], inplace=True) # patients without pat_id get redcap_id
+        mdata = mdata[mdata['pat_id'].notna()] # remove rows without pat_id
         mdata = mdata.rename(columns={'pat_id': 'subject'})
         mdata['subject'] = mdata['subject'].astype(int)
         tables['subject'] = tables['subject'].astype(int)
 
         # Merge the cvi42 data with available metadata
         tables = tables.merge(mdata, how='left', on='subject')
+        tables = tables.drop('subject', axis=1) # use redcap_id as subject id
+        tables = tables[tables['redcap_id'].notna()] # remove rows without redcap_id
+        tables = tables.rename(columns={'redcap_id': 'subject'})
         tables = tables.sort_values(by='subject')
+
+        # Impute missing data if desired
+        if self.impute:
+            imputed_tables = self.impute_data(tables)
+            tables = pd.DataFrame(imputed_tables, index=tables.index, columns=tables.columns)
+
+            # Convert integer cols explicitly to int
+            int_cols = ['age']
+            for col in int_cols:
+                try:
+                    tables[col] = tables[col].astype(int)
+                except KeyError:
+                    pass # skip if column is not found
 
         # Save the tables for analysis
         save_tables(src=self.src, experiment=self.experiment, tables=tables)
@@ -145,5 +167,18 @@ class MergeData:
             self.col_names.append(f'{segment}_{orientation}_{metric}')
 
         self.subject_data += list(table.iloc[:, 0])
+
+    def impute_data(self, tables):
+        categorical = ['sex_0_male_1_female', 'mace']
+        cat_imputer = SimpleImputer(strategy='most_frequent')
+        for col in categorical:
+            try:
+                tables[col] = cat_imputer.fit_transform(tables[[col]])
+            except KeyError:
+                pass # skip if column is not found
+        num_imputer = IterativeImputer(initial_strategy='median') # use median due to int columns
+        tables = num_imputer.fit_transform(tables)
+
+        return tables
 
     

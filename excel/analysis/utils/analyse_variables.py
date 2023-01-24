@@ -13,22 +13,23 @@ def univariate_analysis(data: pd.DataFrame, out_dir: str, metadata: list, whis: 
     """
     Perform univariate analysis (box plots and distributions)
     """
-    # Split data and metadata but keep mace for now
-    metadata.remove('mace')
+    # Split data and metadata but keep hue col for now
+    # hue = 'sex_0_male_1_female'
+    hue = 'mace'
+    metadata.remove(hue)
     mdata = data[metadata]
     to_analyse = data.drop(metadata, axis=1)
 
     # Box plot for each feature w.r.t. MACE
-    data_long = to_analyse.melt(id_vars=['mace'])
-    logger.debug(data_long)
-    sns.boxplot(data=data_long, x='value', y='variable', hue='mace', \
+    data_long = to_analyse.melt(id_vars=[hue])
+    sns.boxplot(data=data_long, x='value', y='variable', hue=hue, \
         orient='h', meanline=True, showmeans=True, whis=whis)
     plt.axvline(x=0, alpha=0.7, color='grey', linestyle='--')
     plt.tight_layout()
-    plt.savefig(os.path.join(out_dir, 'box_plot_mace.pdf'))
+    plt.savefig(os.path.join(out_dir, f'box_plot_{hue}.pdf'))
     plt.clf()
 
-    to_analyse = to_analyse.drop('mace', axis=1) # now remove mace column
+    to_analyse = to_analyse.drop(hue, axis=1) # now remove mace column
 
     # Box plot for each feature
     sns.boxplot(data=to_analyse, orient='h', meanline=True, showmeans=True, whis=whis)

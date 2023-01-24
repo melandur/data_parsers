@@ -15,9 +15,6 @@ class ExploreData:
     def __init__(self, data: pd.DataFrame, experiment: str, exploration: str, out_dir: str, \
         metadata: list, remove_outliers: bool=False, investigate_outliers: bool=False, \
         whis: float=1.5, seed: int=0) -> None:
-        # Correct some mace entries
-        data[data['mace'] == 999] = 0
-
         self.data = data
         self.experiment = experiment
         self.exploration = exploration
