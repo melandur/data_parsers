@@ -23,6 +23,7 @@ def pca(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
     for remove_mdata in [True, False]:
 
         to_analyse = data.copy(deep=True)
+        # OPT: could be removed (at least for impute=True)
         to_analyse = to_analyse.dropna(how='any') # drop rows containing any NaN values
 
         if remove_mdata:
@@ -78,17 +79,23 @@ def tsne(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
             to_analyse = to_analyse.drop('mace', axis=1)
             suffix = 'with_metadata'
 
-        # Perform t-SNE
-        tsne = TSNE(n_components=2, perplexity=30, random_state=seed)
-        analysis = tsne.fit_transform(to_analyse)
-        analysis = pd.DataFrame(analysis, index=to_analyse.index, columns=['tsne_1', 'tsne_2'])
-        analysis = pd.concat((analysis, mdata['mace']), axis=1)
+        # Perform t-SNE for different perplexities
+        perplexities = [5, 15, 30, 50]
+
+        for perp in perplexities:
+            # Calculate t-SNE for given perplexity
+            tsne = TSNE(n_components=2, perplexity=perp, random_state=seed)
+            analysis = tsne.fit_transform(to_analyse)
+            analysis = pd.DataFrame(analysis, index=to_analyse.index, columns=['tsne_1', 'tsne_2'])
+            analysis = pd.concat((analysis, mdata['mace']), axis=1)
+
+            # Plot the transformed dataset
+            sns.lmplot(data=analysis, x='tsne_1', y='tsne_2', hue='mace', \
+                fit_reg=False, legend=True, scatter_kws={'s': 20})
+            plt.title(f't-SNE for perplexity {perp}')
+            plt.savefig(os.path.join(out_dir, f'TSNE_{suffix}_perp_{perp}.pdf'), bbox_inches='tight')
+            plt.clf()
+        
+
         logger.info(f'{len(analysis.index)} subjects ({suffix}).')
 
-        # Plot the transformed dataset
-        sns.lmplot(data=analysis, x='tsne_1', y='tsne_2', hue='mace', \
-            fit_reg=False, legend=True, scatter_kws={'s': 20})
-        # plt.tight_layout()
-        plt.title('t-SNE')
-        plt.savefig(os.path.join(out_dir, f'TSNE_{suffix}.pdf'), bbox_inches='tight')
-        plt.clf()
