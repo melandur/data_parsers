@@ -10,6 +10,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
+from excel.analysis.utils.helpers import split_data
 
 def pca(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
     """Perform Principal Component Analysis (PCA)
@@ -43,6 +44,7 @@ def pca(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
         analysis = pd.concat((analysis, mdata['mace']), axis=1)
         explained_var = pca.explained_variance_ratio_
         logger.info(f'Variance explained: {explained_var} for {len(analysis.index)} subjects ({suffix}).')
+        # logger.info(f'\n{abs(pca.components_)}')
 
         # Plot the transformed dataset
         sns.lmplot(data=analysis, x='pc_1', y='pc_2', hue='mace', \
@@ -55,7 +57,7 @@ def pca(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
         plt.clf()
 
 
-def tsne(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
+def tsne(data: pd.DataFrame, out_dir: str, metadata: list, seed: int, hue: str):
     """Perform t-SNE dimensionality reduction and visualisation
 
     Args:
@@ -69,15 +71,7 @@ def tsne(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
         to_analyse = data.copy(deep=True)
         to_analyse = to_analyse.dropna(how='any') # drop rows containing any NaN values
 
-        if remove_mdata:
-            # Split data and metadata
-            mdata = to_analyse[metadata]
-            to_analyse = to_analyse.drop(metadata, axis=1)
-            suffix = 'no_metadata'
-        else: # keep metadata
-            mdata = to_analyse[['mace']]
-            to_analyse = to_analyse.drop('mace', axis=1)
-            suffix = 'with_metadata'
+        to_analyse, hue_df = split_data(to_analyse, metadata, hue=hue)
 
         # Perform t-SNE for different perplexities
         perplexities = [5, 15, 30, 50]
@@ -87,7 +81,7 @@ def tsne(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
             tsne = TSNE(n_components=2, perplexity=perp, random_state=seed)
             analysis = tsne.fit_transform(to_analyse)
             analysis = pd.DataFrame(analysis, index=to_analyse.index, columns=['tsne_1', 'tsne_2'])
-            analysis = pd.concat((analysis, mdata['mace']), axis=1)
+            analysis = pd.concat((analysis, hue_df), axis=1)
 
             # Plot the transformed dataset
             sns.lmplot(data=analysis, x='tsne_1', y='tsne_2', hue='mace', \

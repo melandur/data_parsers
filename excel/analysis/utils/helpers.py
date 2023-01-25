@@ -19,6 +19,19 @@ def merge_metadata(data, mdata_src, metadata) -> pd.DataFrame:
     return data
 
 def save_tables(src, experiment, tables) -> None:
-        file_path = os.path.join(src, '5_merged', f'{experiment}.xlsx')
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        tables.to_excel(file_path, index=False)
+    file_path = os.path.join(src, '5_merged', f'{experiment}.xlsx')
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    tables.to_excel(file_path, index=False)
+
+def split_data(data: pd.DataFrame, metadata: list, hue: str, \
+    remove_mdata: bool=True, normalise: bool=True):
+    metadata.remove(hue)
+    hue_df = data[[hue]]
+
+    if remove_mdata:
+        to_analyse = data.drop(metadata, axis=1)
+
+    if normalise:
+        to_analyse = (to_analyse - to_analyse.mean()) / to_analyse.std()
+
+    return to_analyse, hue_df
