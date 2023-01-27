@@ -81,6 +81,10 @@ class MergeData:
         tables = tables.rename(columns={'redcap_id': 'subject'})
         tables = tables.sort_values(by='subject')
 
+        # Remove any metadata columns containing less than thresh data
+        threshold = 0.9
+        tables = tables.dropna(axis=1, thresh=threshold*len(tables.index))
+
         # Impute missing metadata if desired
         if self.impute:
             categorical = ['sex_0_male_1_female', 'mace']
@@ -94,6 +98,10 @@ class MergeData:
                     tables[col] = tables[col].astype(int)
                 except KeyError:
                     pass # skip if column is not found
+        else: # remove patients with any NaN values
+            logger.debug(f'Number of patients before dropping NaN metadata: {len(tables.index)}')
+            tables = tables.dropna(axis=0, how='any')
+            logger.debug(f'Number of patients after dropping NaN metadata: {len(tables.index)}')
 
         # Save the tables for analysis
         save_tables(src=self.src, experiment=self.experiment, tables=tables)
@@ -148,6 +156,8 @@ class MergeData:
         # Data imputation
         if self.impute:
             table.iloc[:, info_cols:] = self.impute_data(table.iloc[:, info_cols:], categorical=[])
+        else: # remove patients with any NaN values
+            table = table.dropna(axis=0, how='any')
 
         # Circumferential and longitudinal strain and strain rate peak at minimum value
         if 'strain' in self.table_name and ('circumf' in self.table_name or 'longit' in self.table_name):
