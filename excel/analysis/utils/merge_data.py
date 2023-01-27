@@ -69,7 +69,7 @@ class MergeData:
             mdata[mdata['mace'] == 999] = 0 # correct some mace entries
         # Clean subject IDs
         mdata['pat_id'].fillna(mdata['redcap_id'], inplace=True) # patients without pat_id get redcap_id
-        mdata = mdata[mdata['pat_id'].notna()] # remove rows without pat_id
+        mdata = mdata[mdata['pat_id'].notna()] # remove rows without pat_id and redcap_id
         mdata = mdata.rename(columns={'pat_id': 'subject'})
         mdata['subject'] = mdata['subject'].astype(int)
         tables['subject'] = tables['subject'].astype(int)
@@ -81,9 +81,10 @@ class MergeData:
         tables = tables.rename(columns={'redcap_id': 'subject'})
         tables = tables.sort_values(by='subject')
 
-        # Impute missing data if desired
+        # Impute missing metadata if desired
         if self.impute:
-            imputed_tables = self.impute_data(tables)
+            categorical = ['sex_0_male_1_female', 'mace']
+            imputed_tables = self.impute_data(tables, categorical)
             tables = pd.DataFrame(imputed_tables, index=tables.index, columns=tables.columns)
 
             # Convert integer cols explicitly to int
@@ -144,6 +145,10 @@ class MergeData:
             to_keep = ['global', 'endo', 'epi']
             table = table[table.roi.str.contains('|'.join(to_keep))==True]
 
+        # Data imputation
+        if self.impute:
+            table.iloc[:, info_cols:] = self.impute_data(table.iloc[:, info_cols:], categorical=[])
+
         # Circumferential and longitudinal strain and strain rate peak at minimum value
         if 'strain' in self.table_name and ('circumf' in self.table_name or 'longit' in self.table_name):
             # Compute peak values over sample cols
@@ -168,15 +173,15 @@ class MergeData:
 
         self.subject_data += list(table.iloc[:, 0])
 
-    def impute_data(self, tables):
-        categorical = ['sex_0_male_1_female', 'mace']
+    def impute_data(self, tables: pd.DataFrame, categorical: list):
         cat_imputer = SimpleImputer(strategy='most_frequent')
         for col in categorical:
             try:
                 tables[col] = cat_imputer.fit_transform(tables[[col]])
             except KeyError:
                 pass # skip if column is not found
-        num_imputer = IterativeImputer(initial_strategy='median') # use median due to int columns
+        
+        num_imputer = IterativeImputer(initial_strategy='median')
         tables = num_imputer.fit_transform(tables)
 
         return tables

@@ -6,19 +6,16 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 
-from excel.analysis.utils.helpers import save_tables
+from excel.analysis.utils.helpers import save_tables, split_data
 
 
-def univariate_analysis(data: pd.DataFrame, out_dir: str, metadata: list, whis: float):
+def univariate_analysis(data: pd.DataFrame, out_dir: str, metadata: list, hue: str, whis: float):
     """
     Perform univariate analysis (box plots and distributions)
     """
-    # Split data and metadata but keep hue col for now
-    # hue = 'sex_0_male_1_female'
-    hue = 'mace'
+    # Split data and metadata but keep hue column
     metadata.remove(hue)
-    mdata = data[metadata]
-    to_analyse = data.drop(metadata, axis=1)
+    to_analyse, _, _ = split_data(data, metadata, hue, remove_mdata=True, normalise=False)
 
     # Box plot for each feature w.r.t. MACE
     data_long = to_analyse.melt(id_vars=[hue])
@@ -29,7 +26,7 @@ def univariate_analysis(data: pd.DataFrame, out_dir: str, metadata: list, whis: 
     plt.savefig(os.path.join(out_dir, f'box_plot_{hue}.pdf'))
     plt.clf()
 
-    to_analyse = to_analyse.drop(hue, axis=1) # now remove mace column
+    to_analyse = to_analyse.drop(hue, axis=1) # now remove hue column
 
     # Box plot for each feature
     sns.boxplot(data=to_analyse, orient='h', meanline=True, showmeans=True, whis=whis)

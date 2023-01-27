@@ -37,7 +37,7 @@ class ExploreData:
             
             try:
                 stats_func = getattr(analyse_variables, expl)
-                stats_func(self.data, self.out_dir, self.metadata, self.whis)
+                stats_func(self.data, self.out_dir, self.metadata, 'mace', self.whis)
                 logger.info(f'{expl} data exploration finished.')
                 continue
             except AttributeError:
@@ -45,7 +45,7 @@ class ExploreData:
 
             try:
                 stats_func = getattr(dim_reduction, expl)
-                stats_func(self.data, self.out_dir, self.metadata, self.seed)
+                stats_func(self.data, self.out_dir, self.metadata, 'mace', self.seed)
                 logger.info(f'{expl} data exploration finished.')
                 continue
             except AttributeError:

@@ -12,10 +12,10 @@ from excel.analysis.utils.merge_data import MergeData
 from excel.analysis.utils.update_metadata import UpdateMetadata
 from excel.analysis.utils.exploration import ExploreData
 
-# pd.set_option('display.max_rows', None)
-# pd.set_option('display.max_columns', None)
-# pd.set_option('display.width', None)
-# pd.set_option('display.max_colwidth', None)
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', None)
 
 
 @hydra.main(version_base=None, config_path='../../config', config_name='config')
@@ -39,6 +39,7 @@ def analysis(config: DictConfig) -> None:
     orientations = config.analysis.orientations
     metrics = config.analysis.metrics
     peak_values = config.analysis.peak_values
+    impute = config.analysis.impute
     metadata = config.analysis.metadata
     experiment = config.analysis.experiment
     overwrite = config.analysis.overwrite
@@ -67,7 +68,8 @@ def analysis(config: DictConfig) -> None:
             metrics=metrics,
             peak_values=peak_values,
             metadata=metadata,
-            experiment=experiment
+            experiment=experiment,
+            impute=impute
         )
         merger()
         logger.info('Data merging finished.')

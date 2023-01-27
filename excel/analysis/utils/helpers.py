@@ -25,13 +25,17 @@ def save_tables(src, experiment, tables) -> None:
 
 def split_data(data: pd.DataFrame, metadata: list, hue: str, \
     remove_mdata: bool=True, normalise: bool=True):
-    metadata.remove(hue)
-    hue_df = data[[hue]]
-
-    if remove_mdata:
-        to_analyse = data.drop(metadata, axis=1)
+    to_analyse = data.copy(deep=True)
+    hue_df = to_analyse[[hue]]
 
     if normalise:
-        to_analyse = (to_analyse - to_analyse.mean()) / to_analyse.std()
+        mdata = to_analyse[[metadata]]
+        to_normalise = to_analyse.drop(metadata, axis=1)
+        to_analyse = (to_normalise - to_normalise.mean()) / to_normalise.std()
 
-    return to_analyse, hue_df
+        if not remove_mdata:
+            to_analyse = pd.concat((to_analyse, mdata), axis=1)
+
+    suffix = 'no_mdata' if remove_mdata else 'with_mdata'
+
+    return to_analyse, hue_df, suffix

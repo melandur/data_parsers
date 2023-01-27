@@ -12,7 +12,7 @@ from sklearn.manifold import TSNE
 
 from excel.analysis.utils.helpers import split_data
 
-def pca(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
+def pca(data: pd.DataFrame, out_dir: str, metadata: list, hue: str, seed: int):
     """Perform Principal Component Analysis (PCA)
 
     Args:
@@ -24,24 +24,20 @@ def pca(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
     for remove_mdata in [True, False]:
 
         to_analyse = data.copy(deep=True)
+        logger.debug(f'\n{to_analyse}')
         # OPT: could be removed (at least for impute=True)
         to_analyse = to_analyse.dropna(how='any') # drop rows containing any NaN values
+        # Split data and metadata
+        to_analyse, hue_df, suffix = split_data(to_analyse, metadata, hue, remove_mdata=remove_mdata, \
+            normalise=True)
 
-        if remove_mdata:
-            # Split data and metadata
-            mdata = to_analyse[metadata]
-            to_analyse = to_analyse.drop(metadata, axis=1)
-            suffix = 'no_metadata'
-        else: # keep metadata
-            mdata = to_analyse[['mace']]
-            to_analyse = to_analyse.drop('mace', axis=1)
-            suffix = 'with_metadata'
+        logger.debug(f'\n{to_analyse}')
 
         # Perform PCA
         pca = PCA(n_components=4)
         analysis = pca.fit_transform(to_analyse)
         analysis = pd.DataFrame(analysis, index=to_analyse.index, columns=['pc_1', 'pc_2', 'pc_3', 'pc_4'])
-        analysis = pd.concat((analysis, mdata['mace']), axis=1)
+        analysis = pd.concat((analysis, hue_df), axis=1)
         explained_var = pca.explained_variance_ratio_
         logger.info(f'Variance explained: {explained_var} for {len(analysis.index)} subjects ({suffix}).')
         # logger.info(f'\n{abs(pca.components_)}')
@@ -57,7 +53,7 @@ def pca(data: pd.DataFrame, out_dir: str, metadata: list, seed: int):
         plt.clf()
 
 
-def tsne(data: pd.DataFrame, out_dir: str, metadata: list, seed: int, hue: str):
+def tsne(data: pd.DataFrame, out_dir: str, metadata: list, hue: str, seed: int):
     """Perform t-SNE dimensionality reduction and visualisation
 
     Args:
@@ -71,7 +67,8 @@ def tsne(data: pd.DataFrame, out_dir: str, metadata: list, seed: int, hue: str):
         to_analyse = data.copy(deep=True)
         to_analyse = to_analyse.dropna(how='any') # drop rows containing any NaN values
 
-        to_analyse, hue_df = split_data(to_analyse, metadata, hue=hue)
+        to_analyse, hue_df, suffix = split_data(to_analyse, metadata, hue, remove_mdata=remove_mdata, \
+            normalise=True)
 
         # Perform t-SNE for different perplexities
         perplexities = [5, 15, 30, 50]
@@ -89,7 +86,6 @@ def tsne(data: pd.DataFrame, out_dir: str, metadata: list, seed: int, hue: str):
             plt.title(f't-SNE for perplexity {perp}')
             plt.savefig(os.path.join(out_dir, f'TSNE_{suffix}_perp_{perp}.pdf'), bbox_inches='tight')
             plt.clf()
-        
 
         logger.info(f'{len(analysis.index)} subjects ({suffix}).')
 
