@@ -29,7 +29,7 @@ def split_data(data: pd.DataFrame, metadata: list, hue: str, \
     hue_df = to_analyse[[hue]]
 
     if normalise:
-        mdata = to_analyse[[metadata]]
+        mdata = to_analyse[metadata]
         to_normalise = to_analyse.drop(metadata, axis=1)
         to_analyse = (to_normalise - to_normalise.mean()) / to_normalise.std()
 

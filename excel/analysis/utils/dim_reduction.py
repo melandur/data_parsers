@@ -24,14 +24,11 @@ def pca(data: pd.DataFrame, out_dir: str, metadata: list, hue: str, seed: int):
     for remove_mdata in [True, False]:
 
         to_analyse = data.copy(deep=True)
-        logger.debug(f'\n{to_analyse}')
         # OPT: could be removed (at least for impute=True)
         to_analyse = to_analyse.dropna(how='any') # drop rows containing any NaN values
         # Split data and metadata
         to_analyse, hue_df, suffix = split_data(to_analyse, metadata, hue, remove_mdata=remove_mdata, \
             normalise=True)
-
-        logger.debug(f'\n{to_analyse}')
 
         # Perform PCA
         pca = PCA(n_components=4)

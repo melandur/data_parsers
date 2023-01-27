@@ -181,7 +181,7 @@ class MergeData:
             except KeyError:
                 pass # skip if column is not found
         
-        num_imputer = IterativeImputer(initial_strategy='median')
+        num_imputer = IterativeImputer(initial_strategy='median', max_iter=100)
         tables = num_imputer.fit_transform(tables)
 
         return tables
