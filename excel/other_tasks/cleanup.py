@@ -33,20 +33,23 @@ def cleanup(config: DictConfig) -> None:
         data = pd.read_excel(os.path.join(src_dir, file))
         # Clean data
         data = data.drop(index=0, axis=0) # drop first row
-        data.iloc[:, 9:] = data.iloc[:, 9:].replace(r'[a-zA-Z%/²]', '', regex=True) # remove units
-        data.iloc[:, 9:] = data.iloc[:, 9:].replace(0, np.nan) # set 0 values to NaN      
+        data.iloc[:, 11:] = data.iloc[:, 11:].replace(r'[a-zA-Z%/²]', '', regex=True) # remove units
+        data.iloc[:, 11:] = data.iloc[:, 11:].apply(lambda x: x.str.strip() if x.dtype == "object" else x)
+        data.iloc[:, 11:] = data.iloc[:, 11:].replace([0, ''], np.nan, regex=True) # set 0 values to NaN 
+        data.iloc[:, 11:] = data.iloc[:, 11:].astype(float)
         data = data.sort_values(by='record_id')
+        data = data.dropna(how='all', axis=1) # drop empty columns
 
         data.columns = ['{}{}'.format(c, '' if c in merge_on else f'_{key}') for c in data.columns]
         dataframes.append(data)
 
         # Write data to new excel file
-        data.to_excel(writer, sheet_name=key, index=False, float_format='%.0f')
+        data.to_excel(writer, sheet_name=key, index=False)
 
     # Combine all sheets into one
     combined = reduce(lambda left, right: pd.merge(left, right, on=merge_on, how='outer'), dataframes)
     combined.style.apply(lambda col: highlight_cols(col, files.keys(), colors), axis=0).to_excel(writer, \
-        sheet_name='combined', index=False, float_format='%.0f')
+        sheet_name='combined', index=False)
     writer.close()
 
 
