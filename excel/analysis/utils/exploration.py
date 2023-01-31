@@ -19,7 +19,7 @@ class ExploreData:
         self.experiment = experiment
         self.exploration = exploration
         self.out_dir = out_dir
-        self.metadata = metadata
+        self.metadata = list(set(metadata) & set(data.columns))
         self.remove_outliers = remove_outliers
         self.investigate_outliers = investigate_outliers
         self.whis = whis
@@ -27,10 +27,11 @@ class ExploreData:
 
     def __call__(self) -> None:        
         # Detect (and optionally remove or investigate) outliers
-        self.data = analyse_variables.detect_outliers(self.data, \
-            out_dir=self.out_dir, remove=self.remove_outliers, \
-            investigate=self.investigate_outliers, whis=self.whis, \
-            metadata=self.metadata)
+        if self.remove_outliers or self.investigate_outliers:
+            self.data = analyse_variables.detect_outliers(self.data, \
+                out_dir=self.out_dir, remove=self.remove_outliers, \
+                investigate=self.investigate_outliers, whis=self.whis, \
+                metadata=self.metadata)
 
         for expl in self.exploration:
             logger.info(f'Performing {expl} data exploration.')

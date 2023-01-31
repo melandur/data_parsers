@@ -102,6 +102,9 @@ class MergeData:
                 threshold = 0.9
                 tables = tables.dropna(axis=1, thresh=threshold*len(tables.index))
 
+                # Remove these columns from the metadata list
+                self.metadata = list(set(self.metadata) & set(tables.columns))
+
                 # Impute missing metadata if desired
                 if self.impute:
                     categorical = ['sex_0_male_1_female', 'mace']
