@@ -31,8 +31,11 @@ class MergeData:
         self.metrics = metrics
         self.peak_values = peak_values
         # Always want subject ID
-        self.metadata = ['redcap_id', 'pat_id'] + metadata
-        self.experiment = experiment
+        if metadata:
+            self.metadata = ['redcap_id', 'pat_id'] + metadata
+        else:
+            self.metadata = None
+        self.experiment = experiment + '_imputed' if impute else experiment
         self.impute = impute
 
         self.relevant = []
@@ -46,7 +49,7 @@ class MergeData:
         subjects = os.listdir(self.checked_src)
         for subject in subjects:
             self.col_names = [] # OPT: not necessary for each patient
-            self.subject_data = []
+            self.subject_data = pd.Series(dtype='float64')
             for table in self.loop_files(subject):
                 if self.peak_values:
                     table = self.remove_time(table)
@@ -61,49 +64,50 @@ class MergeData:
         tables = pd.DataFrame(tables_list, index=subjects, columns=self.col_names)
         # Add a subject column and reset index
         tables = tables.rename_axis('subject').reset_index()
-
-        # Read and clean metadata
-        mdata = pd.read_excel(self.mdata_src)
-        mdata = mdata[self.metadata]
-        if 'mace' in self.metadata:
-            mdata[mdata['mace'] == 999] = 0 # correct some mace entries
-        # Clean subject IDs
-        mdata['pat_id'].fillna(mdata['redcap_id'], inplace=True) # patients without pat_id get redcap_id
-        mdata = mdata[mdata['pat_id'].notna()] # remove rows without pat_id and redcap_id
-        mdata = mdata.rename(columns={'pat_id': 'subject'})
-        mdata['subject'] = mdata['subject'].astype(int)
         tables['subject'] = tables['subject'].astype(int)
 
-        # Merge the cvi42 data with available metadata
-        tables = tables.merge(mdata, how='left', on='subject')
-        tables = tables.drop('subject', axis=1) # use redcap_id as subject id
-        tables = tables[tables['redcap_id'].notna()] # remove rows without redcap_id
-        tables = tables.rename(columns={'redcap_id': 'subject'})
-        tables = tables.sort_values(by='subject')
+        # Read and clean metadata
+        if self.metadata:
+            mdata = pd.read_excel(self.mdata_src)
+            mdata = mdata[self.metadata]
+            if 'mace' in self.metadata:
+                mdata[mdata['mace'] == 999] = 0 # correct some mace entries
+            # Clean subject IDs
+            mdata['pat_id'].fillna(mdata['redcap_id'], inplace=True) # patients without pat_id get redcap_id
+            mdata = mdata[mdata['pat_id'].notna()] # remove rows without pat_id and redcap_id
+            mdata = mdata.rename(columns={'pat_id': 'subject'})
+            mdata['subject'] = mdata['subject'].astype(int)
 
-        # Remove any metadata columns containing less than thresh data
-        threshold = 0.9
-        tables = tables.dropna(axis=1, thresh=threshold*len(tables.index))
+            # Merge the cvi42 data with available metadata
+            tables = tables.merge(mdata, how='left', on='subject')
+            tables = tables.drop('subject', axis=1) # use redcap_id as subject id
+            tables = tables[tables['redcap_id'].notna()] # remove rows without redcap_id
+            tables = tables.rename(columns={'redcap_id': 'subject'})
 
-        # Impute missing metadata if desired
-        if self.impute:
-            categorical = ['sex_0_male_1_female', 'mace']
-            imputed_tables = self.impute_data(tables, categorical)
-            tables = pd.DataFrame(imputed_tables, index=tables.index, columns=tables.columns)
+            # Remove any metadata columns containing less than thresh data
+            threshold = 0.9
+            tables = tables.dropna(axis=1, thresh=threshold*len(tables.index))
 
-            # Convert integer cols explicitly to int
-            int_cols = ['age']
-            for col in int_cols:
-                try:
-                    tables[col] = tables[col].astype(int)
-                except KeyError:
-                    pass # skip if column is not found
-        else: # remove patients with any NaN values
-            logger.debug(f'Number of patients before dropping NaN metadata: {len(tables.index)}')
-            tables = tables.dropna(axis=0, how='any')
-            logger.debug(f'Number of patients after dropping NaN metadata: {len(tables.index)}')
+            # Impute missing metadata if desired
+            if self.impute:
+                categorical = ['sex_0_male_1_female', 'mace']
+                imputed_tables = self.impute_data(tables, categorical)
+                tables = pd.DataFrame(imputed_tables, index=tables.index, columns=tables.columns)
+
+                # Convert integer cols explicitly to int
+                int_cols = ['age']
+                for col in int_cols:
+                    try:
+                        tables[col] = tables[col].astype(int)
+                    except KeyError:
+                        pass # skip if column is not found
+            else: # remove patients with any NaN values
+                logger.debug(f'Number of patients before dropping NaN metadata: {len(tables.index)}')
+                tables = tables.dropna(axis=0, how='any')
+                logger.debug(f'Number of patients after dropping NaN metadata: {len(tables.index)}')
 
         # Save the tables for analysis
+        tables = tables.sort_values(by='subject')
         save_tables(src=self.src, experiment=self.experiment, tables=tables)
 
     def identify_tables(self) -> None:
@@ -156,16 +160,16 @@ class MergeData:
         # Data imputation
         if self.impute:
             table.iloc[:, info_cols:] = self.impute_data(table.iloc[:, info_cols:], categorical=[])
-        else: # remove patients with any NaN values
-            table = table.dropna(axis=0, how='any')
+        # else: # remove patients with any NaN values
+        #     table = table.dropna(axis=0, how='any')
 
         # Circumferential and longitudinal strain and strain rate peak at minimum value
         if 'strain' in self.table_name and ('circumf' in self.table_name or 'longit' in self.table_name):
             # Compute peak values over sample cols
-            peak = table.iloc[:, info_cols:].min(axis=1)
+            peak = table.iloc[:, info_cols:].min(axis=1, skipna=True)
         
         else:
-            peak = table.iloc[:, info_cols:].max(axis=1)
+            peak = table.iloc[:, info_cols:].max(axis=1, skipna=True)
 
         # Concat peak values to info cols
         table = pd.concat([table.iloc[:, :info_cols], peak], axis=1)
@@ -176,12 +180,15 @@ class MergeData:
             table = table.groupby(by='roi', sort=False).agg('mean', numeric_only=True)
 
         # Store column names for later
+        col_names = []
         for segment in to_keep:
             orientation = [o for o in self.orientations if o in self.table_name][0]
             metric = [m for m in self.metrics if m in self.table_name][0]
+            col_names.append(f'{segment}_{orientation}_{metric}')
             self.col_names.append(f'{segment}_{orientation}_{metric}')
 
-        self.subject_data += list(table.iloc[:, 0])
+        self.subject_data = pd.concat((self.subject_data, pd.Series(list(table.iloc[:, 0]), \
+            index=col_names)), axis=0)
 
     def impute_data(self, tables: pd.DataFrame, categorical: list):
         cat_imputer = SimpleImputer(strategy='most_frequent')
@@ -192,6 +199,7 @@ class MergeData:
                 pass # skip if column is not found
         
         num_imputer = IterativeImputer(initial_strategy='median', max_iter=100)
+        # logger.debug(f'\n{tables}')
         tables = num_imputer.fit_transform(tables)
 
         return tables
