@@ -66,6 +66,13 @@ class MergeData:
         tables = tables.rename_axis('subject').reset_index()
         tables['subject'] = tables['subject'].astype(int)
 
+        # Data imputation (merged data)
+        if self.impute:
+            imputed_tables = self.impute_data(tables)
+            tables = pd.DataFrame(imputed_tables, index=tables.index, columns=tables.columns)
+        else: # remove patients with any NaN values
+            table = table.dropna(axis=0, how='any')
+
         # Read and clean metadata
         if self.metadata:
             mdata = pd.read_excel(self.mdata_src)
@@ -157,7 +164,7 @@ class MergeData:
             to_keep = ['global', 'endo', 'epi']
             table = table[table.roi.str.contains('|'.join(to_keep))==True]
 
-        # Data imputation
+        # Data imputation (table-wise)
         if self.impute:
             table.iloc[:, info_cols:] = self.impute_data(table.iloc[:, info_cols:], categorical=[])
         # else: # remove patients with any NaN values
@@ -190,7 +197,7 @@ class MergeData:
         self.subject_data = pd.concat((self.subject_data, pd.Series(list(table.iloc[:, 0]), \
             index=col_names)), axis=0)
 
-    def impute_data(self, tables: pd.DataFrame, categorical: list):
+    def impute_data(self, tables: pd.DataFrame, categorical: list=[]):
         cat_imputer = SimpleImputer(strategy='most_frequent')
         for col in categorical:
             try:
