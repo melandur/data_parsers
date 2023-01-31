@@ -75,43 +75,50 @@ class MergeData:
 
         # Read and clean metadata
         if self.metadata:
-            mdata = pd.read_excel(self.mdata_src)
-            mdata = mdata[self.metadata]
-            if 'mace' in self.metadata:
-                mdata[mdata['mace'] == 999] = 0 # correct some mace entries
-            # Clean subject IDs
-            mdata['pat_id'].fillna(mdata['redcap_id'], inplace=True) # patients without pat_id get redcap_id
-            mdata = mdata[mdata['pat_id'].notna()] # remove rows without pat_id and redcap_id
-            mdata = mdata.rename(columns={'pat_id': 'subject'})
-            mdata['subject'] = mdata['subject'].astype(int)
+            try:
+                mdata = pd.read_excel(self.mdata_src)
+            except FileNotFoundError:
+                logger.error(f'Metadata file not found, check path: {self.mdata_src}' \
+                '\nContinue without metadata...')
+                mdata = None
 
-            # Merge the cvi42 data with available metadata
-            tables = tables.merge(mdata, how='left', on='subject')
-            tables = tables.drop('subject', axis=1) # use redcap_id as subject id
-            tables = tables[tables['redcap_id'].notna()] # remove rows without redcap_id
-            tables = tables.rename(columns={'redcap_id': 'subject'})
+            if mdata is not None:
+                mdata = mdata[self.metadata]
+                if 'mace' in self.metadata:
+                    mdata[mdata['mace'] == 999] = 0 # correct some mace entries
+                # Clean subject IDs
+                mdata['pat_id'].fillna(mdata['redcap_id'], inplace=True) # patients without pat_id get redcap_id
+                mdata = mdata[mdata['pat_id'].notna()] # remove rows without pat_id and redcap_id
+                mdata = mdata.rename(columns={'pat_id': 'subject'})
+                mdata['subject'] = mdata['subject'].astype(int)
 
-            # Remove any metadata columns containing less than thresh data
-            threshold = 0.9
-            tables = tables.dropna(axis=1, thresh=threshold*len(tables.index))
+                # Merge the cvi42 data with available metadata
+                tables = tables.merge(mdata, how='left', on='subject')
+                tables = tables.drop('subject', axis=1) # use redcap_id as subject id
+                tables = tables[tables['redcap_id'].notna()] # remove rows without redcap_id
+                tables = tables.rename(columns={'redcap_id': 'subject'})
 
-            # Impute missing metadata if desired
-            if self.impute:
-                categorical = ['sex_0_male_1_female', 'mace']
-                imputed_tables = self.impute_data(tables, categorical)
-                tables = pd.DataFrame(imputed_tables, index=tables.index, columns=tables.columns)
+                # Remove any metadata columns containing less than thresh data
+                threshold = 0.9
+                tables = tables.dropna(axis=1, thresh=threshold*len(tables.index))
 
-                # Convert integer cols explicitly to int
-                int_cols = ['age']
-                for col in int_cols:
-                    try:
-                        tables[col] = tables[col].astype(int)
-                    except KeyError:
-                        pass # skip if column is not found
-            else: # remove patients with any NaN values
-                logger.debug(f'Number of patients before dropping NaN metadata: {len(tables.index)}')
-                tables = tables.dropna(axis=0, how='any')
-                logger.debug(f'Number of patients after dropping NaN metadata: {len(tables.index)}')
+                # Impute missing metadata if desired
+                if self.impute:
+                    categorical = ['sex_0_male_1_female', 'mace']
+                    imputed_tables = self.impute_data(tables, categorical)
+                    tables = pd.DataFrame(imputed_tables, index=tables.index, columns=tables.columns)
+
+                    # Convert integer cols explicitly to int
+                    int_cols = ['age']
+                    for col in int_cols:
+                        try:
+                            tables[col] = tables[col].astype(int)
+                        except KeyError:
+                            pass # skip if column is not found
+                else: # remove patients with any NaN values
+                    logger.debug(f'Number of patients before dropping NaN metadata: {len(tables.index)}')
+                    tables = tables.dropna(axis=0, how='any')
+                    logger.debug(f'Number of patients after dropping NaN metadata: {len(tables.index)}')
 
         # Save the tables for analysis
         tables = tables.sort_values(by='subject')
