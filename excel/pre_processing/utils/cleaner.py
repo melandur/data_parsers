@@ -79,7 +79,7 @@ class TableCleaner:
                 df['peak_strain_rad_%'] = df['peak_strain_rad_%'].replace('--', np.nan)
         sample_cols = [col for col in df.columns if 'sample' in col]
         df[sample_cols] = df[sample_cols].replace(0, np.nan)
-        df[sample_cols] = df[sample_cols].replace(r'[a-zA-Z%/²]', '', regex=True) # remove non-numeric
+        df[sample_cols] = df[sample_cols].replace(r'[a-zA-Z%/²]', np.nan, regex=True) # replace non-numeric
 
         # Only drop rows containing any nan value in strict mode
         if self.strict:
