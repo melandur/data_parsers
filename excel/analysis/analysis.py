@@ -70,7 +70,8 @@ def analysis(config: DictConfig) -> None:
             peak_values=peak_values,
             metadata=metadata,
             experiment=experiment,
-            impute=impute
+            impute=impute,
+            seed=seed
         )
         merger()
         logger.info('Data merging finished.')

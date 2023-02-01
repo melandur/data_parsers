@@ -19,7 +19,7 @@ class MergeData:
 
     def __init__(self, src: str, mdata_src: str, dims: list, segments: list, axes: list, \
         orientations: list, metrics: list, peak_values: bool=True, metadata: list=None, \
-        experiment: str='unnamed_experiment', impute: bool=True) -> None:
+        experiment: str='unnamed_experiment', impute: bool=True, seed: int=0) -> None:
         self.src = src
         dir_name = checked_dir(dims)
         self.checked_src = os.path.join(src, '4_checked', dir_name)
@@ -37,6 +37,7 @@ class MergeData:
             self.metadata = None
         self.experiment = experiment
         self.impute = impute
+        self.seed = seed
 
         self.relevant = []
         self.table_name = None
@@ -211,18 +212,19 @@ class MergeData:
         self.subject_data = pd.concat((self.subject_data, pd.Series(list(table.iloc[:, 0]), \
             index=col_names)), axis=0)
 
-    def impute_data(self, tables: pd.DataFrame, categorical: list=[]):
+    def impute_data(self, table: pd.DataFrame, categorical: list=[]):
         cat_imputer = SimpleImputer(strategy='most_frequent')
         for col in categorical:
             try:
-                tables[col] = cat_imputer.fit_transform(tables[[col]])
+                table[col] = cat_imputer.fit_transform(table[[col]])
             except KeyError:
                 pass # skip if column is not found
-        
-        num_imputer = IterativeImputer(initial_strategy='median', max_iter=100)
-        # logger.debug(f'\n{tables}')
-        tables = num_imputer.fit_transform(tables)
+                
+        num_imputer = IterativeImputer(initial_strategy='median', max_iter=100, \
+            random_state=self.seed, keep_empty_features=True)
+        # logger.debug(f'\n{table}')
+        table = num_imputer.fit_transform(table)
 
-        return tables
+        return table
 
     
