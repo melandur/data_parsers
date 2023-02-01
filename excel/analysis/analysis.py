@@ -51,6 +51,7 @@ def analysis(config: DictConfig) -> None:
     seed = config.analysis.seed
 
     # TODO: train and test paths/sets
+    experiment = experiment + '_imputed' if impute else experiment
     merged_path = os.path.join(src_dir, '5_merged', f'{experiment}.xlsx')
 
     # Data merging

@@ -35,7 +35,7 @@ class MergeData:
             self.metadata = ['redcap_id', 'pat_id'] + metadata
         else:
             self.metadata = None
-        self.experiment = experiment + '_imputed' if impute else experiment
+        self.experiment = experiment
         self.impute = impute
 
         self.relevant = []
@@ -84,8 +84,12 @@ class MergeData:
 
             if mdata is not None:
                 mdata = mdata[self.metadata]
+                # Clean some errors in metadata
                 if 'mace' in self.metadata:
-                    mdata[mdata['mace'] == 999] = 0 # correct some mace entries
+                    mdata[mdata['mace'] == 999] = 0
+                if 'fhxcad___1' in self.metadata:
+                    mdata.loc[~mdata['fhxcad___1'].isin([0, 1]), 'fhxcad___1'] = 0
+
                 # Clean subject IDs
                 mdata['pat_id'].fillna(mdata['redcap_id'], inplace=True) # patients without pat_id get redcap_id
                 mdata = mdata[mdata['pat_id'].notna()] # remove rows without pat_id and redcap_id
@@ -107,7 +111,7 @@ class MergeData:
 
                 # Impute missing metadata if desired
                 if self.impute:
-                    categorical = ['sex_0_male_1_female', 'mace']
+                    categorical = [col for col in self.metadata if col not in ['bmi']]
                     imputed_tables = self.impute_data(tables, categorical)
                     tables = pd.DataFrame(imputed_tables, index=tables.index, columns=tables.columns)
 

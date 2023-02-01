@@ -34,7 +34,7 @@ class ExploreData:
                 metadata=self.metadata)
 
         for expl in self.exploration:
-            logger.info(f'Performing {expl} data exploration.')
+            logger.info(f'Performing {expl} data exploration for {len(self.data.index)} patients.')
             
             try:
                 stats_func = getattr(analyse_variables, expl)
