@@ -35,6 +35,11 @@ class ExploreData:
 
         for expl in self.exploration:
             logger.info(f'Performing {expl} data exploration for {len(self.data.index)} patients.')
+
+            if expl == 'correlation':
+                analyse_variables.correlation(self.data, self.out_dir, self.metadata)
+                logger.info(f'{expl} data exploration finished.')
+                continue
             
             try:
                 stats_func = getattr(analyse_variables, expl)

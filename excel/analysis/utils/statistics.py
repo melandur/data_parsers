@@ -54,7 +54,7 @@ def anderson_darling_test(data):
     print('Anderson darling test ', result)
 
 
-# Correlation test ( check if two samples are related)
+# Correlation test (check if two samples are related)
 def pearson_correlation(data_1, data_2):
     """
     Pearson’s Correlation Coefficient (Tests whether two samples have a linear relationship)

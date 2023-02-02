@@ -41,11 +41,26 @@ def univariate_analysis(data: pd.DataFrame, out_dir: str, metadata: list, hue: s
     plt.savefig(os.path.join(out_dir, 'dis_plot.pdf'))
     plt.clf()
 
-def bivariate_analysis(to_analyse: pd.DataFrame, out_dir: str, metadata:list):
+def bivariate_analysis(to_analyse: pd.DataFrame, out_dir: str, metadata: list):
     """
     Perform bivariate analysis
     """
     pass
+
+def correlation(to_analyse: pd.DataFrame, out_dir: str, metadata: list, method: str='pearson', \
+    drop_features: bool=True) -> None:
+    """
+    Compute correlation between features and optionally drop highly correlated ones
+    """
+    matrix = to_analyse.corr(method=method).round(2)
+    
+    # Remove features with high correlation
+    
+    
+    # Plot heatmap
+    sns.heatmap(matrix, annot=True, xticklabels=True, yticklabels=True)
+    plt.xticks(rotation=90)
+    plt.savefig(os.path.join(out_dir, 'corr_plot.pdf'))
 
 def detect_outliers(data: pd.DataFrame, out_dir: str, whis: float, remove:bool, \
     investigate: bool, metadata: list=[]):
