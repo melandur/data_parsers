@@ -54,7 +54,7 @@ def correlation(to_analyse: pd.DataFrame, out_dir: str, metadata: list, method: 
     """
     matrix = to_analyse.corr(method=method).round(2)
     
-    # Remove features with high correlation
+    # Feature selection
     
     
     # Plot heatmap
