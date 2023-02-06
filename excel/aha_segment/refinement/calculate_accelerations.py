@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from loguru import logger
 
-from excel.path_master import CHECKED_PATH, CONDENSED_PATH
+from excel.global import CHECKED_PATH, CONDENSED_PATH
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
@@ -12,6 +12,7 @@ pd.set_option('display.max_colwidth', None)
 
 
 # TODO: Need to check Jerk as well
+# TODO: only done for 3d so far (hardcoded)
 class CalculateAcceleration:
     """Narrows down the table to the columns of interest"""
 

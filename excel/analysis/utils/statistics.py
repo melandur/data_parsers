@@ -1,4 +1,6 @@
-import matplotlib.pyplot as plt
+import os
+
+from loguru import logger
 import numpy as np
 from scipy.stats import (
     anderson,
@@ -16,7 +18,7 @@ from scipy.stats import (
     ttest_rel,
     wilcoxon,
 )
-
+    
 
 # Normality test (check if data has a Gaussian distribution)
 def shapiro_test(data):
@@ -52,7 +54,7 @@ def anderson_darling_test(data):
     print('Anderson darling test ', result)
 
 
-# Correlation test ( check if two samples are related)
+# Correlation test (check if two samples are related)
 def pearson_correlation(data_1, data_2):
     """
     Pearson’s Correlation Coefficient (Tests whether two samples have a linear relationship)
@@ -149,7 +151,7 @@ def anova(data_1, data_2):
 
 def mannwhitneyu_test(data_1, data_2):
     """
-    ################ Nonparametric Statistical Hypothesis Tests (use to compare data samples) ##############################
+    Nonparametric Statistical Hypothesis Tests (use to compare data samples)
 
     Mann-Whitney U Test (Tests whether the distributions of two independent samples are equal or not)
 

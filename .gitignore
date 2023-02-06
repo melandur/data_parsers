@@ -78,3 +78,12 @@ fabric.properties
 
 .idea
 __pycache__
+env/
+
+.vscode/
+
+excel/aha_segment/analyze/.ipynb_checkpoints/
+
+poetry.lock
+
+outputs/
