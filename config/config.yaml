@@ -48,7 +48,13 @@ analysis:
   whis: 1.5
   # random seed
   seed: 545
-  # which metadata groups to include
+  # threshold above which correlated features are removed
+  corr_thresh: 0.4
+  # whether to drop highly correlated features for further analysis
+  drop_features: False
+  # method to use for feature reduction (higher precedence than correlation-based feature reduction)
+  feature_reduction: 'forest'
+  # which metadata features to include
   metadata: ['sex_0_male_1_female', 'age', 'bmi', 'mace',   # demographic
              'hxhtn', 'hxdm', 'dm_ja_nein', 'hxchol',   # medical history
              'fhxcad___1', 'fhxcad___2', 'fhxcad___3', 'fhxcad___0', 

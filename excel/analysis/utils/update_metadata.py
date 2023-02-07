@@ -13,7 +13,7 @@ class UpdateMetadata:
         self.config = config
         self.src = config.dataset.out_dir
         self.experiment = config.experiment.name
-        self.mdata_src = config.dataset.mdata_src
+        self.mdata_src = config.dataset.mdata
         self.metadata = config.experiment.metadata
 
     def __call__(self) -> pd.DataFrame:

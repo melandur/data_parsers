@@ -1,10 +1,13 @@
 """Data exploration module
 """
 
+import os
+
 from loguru import logger
 import pandas as pd
 from omegaconf import DictConfig
 
+from excel.analysis.utils import statistics
 from excel.analysis.utils import analyse_variables
 from excel.analysis.utils import dim_reduction
 
@@ -19,6 +22,8 @@ class ExploreData:
         self.whis = config.analysis.whis
         self.metadata = config.analysis.metadata
         self.seed = config.analysis.seed
+        self.feature_reduction = config.analysis.feature_reduction
+        self.corr_thresh = config.analysis.corr_thresh
 
     def __call__(self) -> None:
         # Detect (and optionally remove or investigate) outliers
@@ -32,11 +37,25 @@ class ExploreData:
                 metadata=self.metadata,
             )
 
+        if self.feature_reduction is not None:
+            logger.info(f'Performing {self.feature_reduction}-based feature reduction.')
+            self.drop_features = False  # higher precedence than correlation-based feature reduction
+            self.data, self.metadata = analyse_variables.feature_reduction(
+                self.data, self.out_dir, self.metadata, method=self.feature_reduction, seed=self.seed, label='mace'
+            )
+            logger.info(f'{self.feature_reduction}-based feature reduction finished.')
+
         for expl in self.exploration:
             logger.info(f'Performing {expl} data exploration for {len(self.data.index)} patients.')
 
             if expl == 'correlation':
-                analyse_variables.correlation(self.data, self.out_dir, self.metadata)
+                self.data, self.metadata = analyse_variables.correlation(
+                    self.data,
+                    self.out_dir,
+                    self.metadata,
+                    corr_thresh=self.corr_thresh,
+                    drop_features=self.drop_features,
+                )
                 logger.info(f'{expl} data exploration finished.')
                 continue
 

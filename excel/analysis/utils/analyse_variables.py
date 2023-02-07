@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 
 from excel.analysis.utils.helpers import save_tables, split_data
 
@@ -49,19 +50,72 @@ def bivariate_analysis(to_analyse: pd.DataFrame, out_dir: str, metadata: list):
 
 
 def correlation(
-    to_analyse: pd.DataFrame, out_dir: str, metadata: list, method: str = 'pearson', drop_features: bool = True
-) -> None:
+    to_analyse: pd.DataFrame,
+    out_dir: str,
+    metadata: list,
+    method: str = 'pearson',
+    corr_thresh: float = 0.6,
+    drop_features: bool = True,
+):
     """
     Compute correlation between features and optionally drop highly correlated ones
     """
     matrix = to_analyse.corr(method=method).round(2)
 
     # Feature selection
+    if drop_features:
+        abs_corr = matrix.abs()
+        upper_tri = abs_corr.where(np.triu(np.ones(abs_corr.shape), k=1).astype(bool))
+        cols_to_drop = [col for col in upper_tri.columns if any(upper_tri[col] > corr_thresh)]
+        metadata = [col for col in metadata if col not in cols_to_drop]
+        to_analyse = to_analyse.drop(cols_to_drop, axis=1)
+        logger.info(
+            f'Removed {len(cols_to_drop)} redundant features with correlation above {corr_thresh}, '
+            f'number of remaining features: {len(to_analyse.columns)}'
+        )
+        matrix = to_analyse.corr(method=method).round(2)
 
-    # Plot heatmap
+    # Plot correlation heatmap
+    plt.figure(figsize=(50, 50))
     sns.heatmap(matrix, annot=True, xticklabels=True, yticklabels=True)
     plt.xticks(rotation=90)
     plt.savefig(os.path.join(out_dir, 'corr_plot.pdf'))
+    plt.clf()
+
+    # Plot patient/feature value heatmap
+    # plt.figure(figsize=(50, 50))
+    # sns.heatmap(to_analyse.transpose(), annot=False, xticklabels=False, yticklabels=True)
+    # plt.xticks(rotation=90)
+    # plt.savefig(os.path.join(out_dir, 'heatmap.pdf'))
+    # plt.clf()
+
+    return to_analyse, metadata
+
+
+def feature_reduction(
+    to_analyse: pd.DataFrame, out_dir: str, metadata: list, method: str = 'forest', seed: int = 0, label: str = 'mace'
+):
+    if method == 'forest':
+        # Calculate feature importance using random forests
+        forest = RandomForestClassifier(random_state=seed)
+        X = to_analyse.drop(label, axis=1)
+        y = to_analyse[label]
+        forest.fit(X, y)
+        importances = pd.Series(forest.feature_importances_, index=X.columns)
+        std = np.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
+
+        # Plot importances
+        fig, ax = plt.subplots()
+        importances.plot.bar(yerr=std, ax=ax)
+        ax.set_title("Feature importances using MDI")
+        ax.set_ylabel("Mean decrease in impurity")
+        fig.tight_layout()
+        plt.savefig(os.path.join(out_dir, 'feature_importance.pdf'))
+
+        # Remove features with low importance
+        # TODO:
+
+    return to_analyse, metadata
 
 
 def detect_outliers(

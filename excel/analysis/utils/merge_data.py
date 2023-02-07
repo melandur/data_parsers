@@ -106,7 +106,7 @@ class MergeData:
                 tables = tables.dropna(axis=1, thresh=threshold * len(tables.index))
 
                 # Remove these columns from the metadata list
-                self.metadata = list(set(self.metadata) & set(tables.columns))
+                self.metadata = [col for col in self.metadata if col in tables.columns]
 
                 # Impute missing metadata if desired
                 if self.impute:
@@ -125,6 +125,11 @@ class MergeData:
                     logger.debug(f'Number of patients before dropping NaN metadata: {len(tables.index)}')
                     tables = tables.dropna(axis=0, how='any')
                     logger.debug(f'Number of patients after dropping NaN metadata: {len(tables.index)}')
+
+                # Remove features containing the same value for all patients
+                nunique = tables.nunique()
+                cols_to_drop = nunique[nunique == 1].index
+                tables = tables.drop(cols_to_drop, axis=1)
 
         # Save the tables for analysis
         tables = tables.sort_values(by='subject')
