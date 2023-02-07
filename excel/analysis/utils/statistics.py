@@ -18,7 +18,7 @@ from scipy.stats import (
     ttest_rel,
     wilcoxon,
 )
-    
+
 
 # Normality test (check if data has a Gaussian distribution)
 def shapiro_test(data):

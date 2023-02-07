@@ -5,7 +5,7 @@ defaults:
 ### add global default parameter values below
 dataset:
   # metadata source directory
-  mdata_src: '/home/sebalzer/Documents/Mike_init/Final_Regional_Database_reduced.xlsx'
+  mdata_src: '/home/melandur/Data/Myocarditis/Final_Regional_Database_reduced.xlsx'
   # mdata_src: '/mnt/c/Users/Sebastian/OneDrive/Dokumente/Insel/Final_Regional_Database.xlsx'
   # whether to save intermediate steps
   save_intermediate: False

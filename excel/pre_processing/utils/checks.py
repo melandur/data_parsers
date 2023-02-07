@@ -10,8 +10,15 @@ from excel.pre_processing.utils.helpers import NestedDefaultDict
 class SplitByCompleteness:
     """Sort files by completeness"""
 
-    def __init__(self, src: str, dst: str, save_intermediate: bool=True, \
-        dims: list=['2d'], tables: NestedDefaultDict=None, strict: bool=False) -> None:
+    def __init__(
+        self,
+        src: str,
+        dst: str,
+        save_intermediate: bool = True,
+        dims: list = ['2d'],
+        tables: NestedDefaultDict = None,
+        strict: bool = False,
+    ) -> None:
         self.src = src
         self.dst = dst
         self.save_intermediate = save_intermediate
@@ -45,7 +52,7 @@ class SplitByCompleteness:
             self.divide_cases()
             self.move_files()
 
-        else: # use dict of DataFrames
+        else:  # use dict of DataFrames
             # Instead of dividing into complete and missing,
             # delete all subjects with missing tables in requested dims
             for subject in list(self.tables.keys()):

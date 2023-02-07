@@ -9,7 +9,7 @@ from re import sub
 
 
 class ExtractWorkbook2Sheets:
-    def __init__(self, src: str, dst: str, save_intermediate: bool=True) -> None:
+    def __init__(self, src: str, dst: str, save_intermediate: bool = True) -> None:
         self.src_file = src
         self.dst_folder = dst
         self.save_intermediate = save_intermediate
@@ -40,7 +40,7 @@ class ExtractWorkbook2Sheets:
 
     def extract_sheets(self) -> None:
         """Extract sheets"""
-        wb = self.load_file()  # load workbook            
+        wb = self.load_file()  # load workbook
 
         for sheet_name in wb.sheetnames:  # loop through sheets
             if self.check_sheet_name(sheet_name):
@@ -57,7 +57,7 @@ class ExtractWorkbook2Sheets:
                     new_wb.save(f'{os.path.join(self.dst_folder, clean_sheet_name)}.xlsx')
                     new_wb.close()
 
-                else: # store in dict instead of saving files
+                else:  # store in dict instead of saving files
                     self.sheets[clean_sheet_name] = DataFrame(old_sheet.values)
 
     @staticmethod
@@ -65,11 +65,11 @@ class ExtractWorkbook2Sheets:
         """Get a clean sheet name"""
         if '_' in sheet_name:
             sheet_name = sheet_name.split('_')[1]  # get sheet name after '_'
-            sheet_name = sub("[^0-9]", "", sheet_name) # remove non-numberic characters
+            sheet_name = sub("[^0-9]", "", sheet_name)  # remove non-numberic characters
             return sheet_name
         if ' ' in sheet_name:
             sheet_name = sheet_name.split(' ')[1]  # get sheet name after '_'
-            sheet_name = sub("[^0-9]", "", sheet_name) # remove non-numberic characters
+            sheet_name = sub("[^0-9]", "", sheet_name)  # remove non-numberic characters
             return sheet_name
         return f'fix_me_{sheet_name}'
 
@@ -86,6 +86,5 @@ class ExtractWorkbook2Sheets:
         """Load file"""
         if not self.src_file.startswith('.'):  # avoid loading hidden tmp file
             self.subject_name = self.src_file.strip('.xlsx')
-            return load_workbook(self.src_file, read_only=True, data_only=True, \
-                keep_vba=False, keep_links=False)
+            return load_workbook(self.src_file, read_only=True, data_only=True, keep_vba=False, keep_links=False)
         return None

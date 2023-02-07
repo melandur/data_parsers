@@ -21,7 +21,7 @@ class NestedDefaultDict(defaultdict):
 class SaveTables:
     """Save tables from NestedDefaultDict to .xlsx files"""
 
-    def __init__(self, dst: str, dims: list=['2d'], tables: NestedDefaultDict=None) -> None:
+    def __init__(self, dst: str, dims: list = ['2d'], tables: NestedDefaultDict = None) -> None:
         self.dst = dst
         self.dims = dims
         self.tables = tables
@@ -35,7 +35,6 @@ class SaveTables:
                     if table is None:
                         continue
                     self.save(table, subject, dim, table_name)
-
 
     def save(self, df: pd.DataFrame, subject: str, dim: str, table: str) -> None:
         """Save table"""

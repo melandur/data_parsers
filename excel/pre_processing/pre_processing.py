@@ -47,62 +47,44 @@ def pre_processing(config: DictConfig) -> None:
     # additionally removes any colour formatting
     sheets = {}
     for src_file in os.listdir(src_dir):
-    # for src_file in [os.path.join(src_dir, 'D. Strain_v3b_FlamBer_61-120.xlsx')]:
+        # for src_file in [os.path.join(src_dir, 'D. Strain_v3b_FlamBer_61-120.xlsx')]:
         if src_file.endswith('.xlsx') and not src_file.startswith('.'):
             logger.info(f'File -> {src_file}')
             workbook_2_sheets = ExtractWorkbook2Sheets(
-                src=os.path.join(src_dir, src_file),
-                dst=dst,
-                save_intermediate=save_intermediate
+                src=os.path.join(src_dir, src_file), dst=dst, save_intermediate=save_intermediate
             )
             sheets = sheets | workbook_2_sheets()
 
-            if save_intermediate: # update paths
+            if save_intermediate:  # update paths
                 src_dir = dst
                 dst = os.path.join(dst_dir, '2_case_wise')
 
             sheets_2_tables = ExtractSheets2Tables(
-                src=src_dir,
-                dst=dst,
-                save_intermediate=save_intermediate,
-                sheets=sheets
-            ) 
+                src=src_dir, dst=dst, save_intermediate=save_intermediate, sheets=sheets
+            )
             tables = sheets_2_tables()
 
-            if save_intermediate: # update paths
+            if save_intermediate:  # update paths
                 src_dir = dst
                 dst = os.path.join(dst_dir, '3_cleaned')
 
             cleaner = TableCleaner(
-                src=src_dir,
-                dst=dst,
-                save_intermediate=save_intermediate,
-                dims=dims,
-                tables=tables,
-                strict=strict
+                src=src_dir, dst=dst, save_intermediate=save_intermediate, dims=dims, tables=tables, strict=strict
             )
             clean_tables = cleaner()
 
-            if save_intermediate: # update paths
+            if save_intermediate:  # update paths
                 src_dir = dst
                 dst = os.path.join(dst_dir, '4_checked', dir_name)
 
             checker = SplitByCompleteness(
-                src=src_dir,
-                dst=dst,
-                save_intermediate=save_intermediate,
-                dims=dims,
-                tables=clean_tables,
-                strict=strict
+                src=src_dir, dst=dst, save_intermediate=save_intermediate, dims=dims, tables=clean_tables, strict=strict
             )
             complete_tables = checker()
 
             # Save final pre-processed tables (only relevant if save_intermediate=False)
             if not save_intermediate and save_final:
-                saver = SaveTables(
-                    dst=dst,
-                    tables=complete_tables
-                )
+                saver = SaveTables(dst=dst, tables=complete_tables)
 
                 saver()
 

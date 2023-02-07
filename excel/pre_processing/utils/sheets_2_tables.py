@@ -15,8 +15,9 @@ pd.set_option('display.max_colwidth', None)
 
 
 class ExtractSheets2Tables:
-    def __init__(self, src: str, dst: str, save_intermediate: bool=True, \
-        dims: list=['2d'], sheets: dict=None) -> None:
+    def __init__(
+        self, src: str, dst: str, save_intermediate: bool = True, dims: list = ['2d'], sheets: dict = None
+    ) -> None:
         self.src = src
         self.dst = dst
         self.save_intermediate = save_intermediate
@@ -42,7 +43,7 @@ class ExtractSheets2Tables:
                 for row in self.loop_row():
                     self.extract_table(row)
 
-        else: # use dict of DataFrames
+        else:  # use dict of DataFrames
             for self.subject_name, self.sheet in self.sheets.items():
                 self.tables[self.subject_name] = NestedDefaultDict()
                 for self.dim in self.dims:
@@ -51,7 +52,7 @@ class ExtractSheets2Tables:
                         self.extract_table(row)
 
                     # logger.info(self.count)
-        
+
         return self.tables
 
     def __del__(self) -> None:
@@ -175,10 +176,10 @@ class ExtractSheets2Tables:
 
         for col in range(start_col, start_col + 100, 1):  # 100 is the maximum number of cols to search
             if self.save_intermediate:
-                if self.sheet.cell(row=row+1, column=col).value is None:
+                if self.sheet.cell(row=row + 1, column=col).value is None:
                     return col - start_col
             else:
-                if self.sheet.iloc[row+2, col] is None or self.sheet.iloc[row, col] is not None:
+                if self.sheet.iloc[row + 2, col] is None or self.sheet.iloc[row, col] is not None:
                     return col
 
         raise AssertionError(
@@ -186,7 +187,7 @@ class ExtractSheets2Tables:
         )
 
     def extract_table(self, row: int) -> pd.DataFrame:
-        """Extract table according to mode"""        
+        """Extract table according to mode"""
         self.detect_table_name(row)
 
         # Only extract tables with data in requested dims
@@ -222,7 +223,7 @@ class ExtractSheets2Tables:
 
         if df.empty:
             return None
-            
+
         if not self.save_intermediate:
             df = df.rename(columns=df.iloc[0]).drop(df.index[0]).reset_index(drop=True)
         header = df.columns.tolist()
@@ -288,12 +289,11 @@ class ExtractSheets2Tables:
     def extract_roi_polarmap(self, row: int) -> pd.DataFrame:
         """Extract roi polarmap"""
         row_end = self._table_row_end_finder(row, 2, None)
-        
+
         if self.save_intermediate:
             df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:S')
         else:
-            df = self.sheet.iloc[row+2:row+row_end, 1:19]
-
+            df = self.sheet.iloc[row + 2 : row + row_end, 1:19]
 
         df.columns = [
             'slices',
@@ -320,11 +320,11 @@ class ExtractSheets2Tables:
     def extract_aha_polarmap(self, row: int) -> pd.DataFrame:
         """Extract aha polarmap"""
         row_end = self._table_row_end_finder(row, 2, None)
-        
+
         if self.save_intermediate:
             df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, usecols='B:R')
         else:
-            df = self.sheet.iloc[row+2:row+row_end, 1:18]
+            df = self.sheet.iloc[row + 2 : row + row_end, 1:18]
 
         if 'short' in self.data_name:
             axis = 'circumf'
@@ -360,11 +360,11 @@ class ExtractSheets2Tables:
         """Extract aha diagram 2d"""
         row_end = self._table_row_end_finder(row, 2, None)
         col_end = self._table_col_end_finder(row)
-        
+
         if self.save_intermediate:
             df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, ncols=col_end)
         else:
-            df = self.sheet.iloc[row+1:row+row_end, 1:col_end]
+            df = self.sheet.iloc[row + 1 : row + row_end, 1:col_end]
 
         if not df.empty:
             df = self.rearrange_time_helper(df)
@@ -376,11 +376,11 @@ class ExtractSheets2Tables:
         """Extract global roi 2d"""
         row_end = self._table_row_end_finder(row, 2, None)
         col_end = self._table_col_end_finder(row)
-        
+
         if self.save_intermediate:
             df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 2, nrows=row_end, ncols=col_end)
         else:
-            df = self.sheet.iloc[row+2:row+row_end, 1:col_end]
+            df = self.sheet.iloc[row + 2 : row + row_end, 1:col_end]
 
         if not df.empty:
             df = self.rearrange_time_helper(df)
@@ -392,11 +392,11 @@ class ExtractSheets2Tables:
         """Extract volume 3d"""
         row_end = self._table_row_end_finder(row, 2, None)
         col_end = self._table_col_end_finder(row)
-        
+
         if self.save_intermediate:
             df = pd.read_excel(self.file_path, self.subject_name, skiprows=row + 1, nrows=row_end, ncols=col_end)
         else:
-            df = self.sheet.iloc[row+1:row+row_end, 1:col_end]
+            df = self.sheet.iloc[row + 1 : row + row_end, 1:col_end]
 
         if not df.empty:
             df = self.rearrange_time_volume(df)

@@ -16,8 +16,15 @@ pd.set_option('display.max_colwidth', None)
 class TableCleaner:
     """Inter-/Extrapolate NaN rows or delete them"""
 
-    def __init__(self, src: str, dst: str, save_intermediate: bool=True, \
-        dims: list=['2d'], tables: NestedDefaultDict=None, strict: bool=False) -> None:
+    def __init__(
+        self,
+        src: str,
+        dst: str,
+        save_intermediate: bool = True,
+        dims: list = ['2d'],
+        tables: NestedDefaultDict = None,
+        strict: bool = False,
+    ) -> None:
         self.src = src
         self.dst = dst
         self.save_intermediate = save_intermediate
@@ -35,12 +42,11 @@ class TableCleaner:
                         if df is not None:
                             self.save(df, subject, dim, table)
 
-                else: # use dict of DataFrames
+                else:  # use dict of DataFrames
                     for table in self.tables[subject][dim]:
                         self.tables[subject][dim][table] = self.clean(subject, dim, table)
 
         return self.tables
-
 
     def loop_subjects(self) -> str:
         """Loop over subjects"""
@@ -79,7 +85,7 @@ class TableCleaner:
                 df['peak_strain_rad_%'] = df['peak_strain_rad_%'].replace('--', np.nan)
         sample_cols = [col for col in df.columns if 'sample' in col]
         df[sample_cols] = df[sample_cols].replace(0, np.nan)
-        df[sample_cols] = df[sample_cols].replace(r'[a-zA-Z%/²]', np.nan, regex=True) # replace non-numeric
+        df[sample_cols] = df[sample_cols].replace(r'[a-zA-Z%/²]', np.nan, regex=True)  # replace non-numeric
 
         # Only drop rows containing any nan value in strict mode
         if self.strict:
@@ -96,5 +102,3 @@ class TableCleaner:
         export_path = os.path.join(self.dst, subject, dim, table)
         os.makedirs(os.path.dirname(export_path), exist_ok=True)
         df.to_excel(export_path, index=False)
-
-

@@ -201,7 +201,6 @@ if __name__ == '__main__':
                     'SeriesDescription': {'+': ['T1', '']},
                     'Modality': {'+': ['MR']},
                     'MRAcquisitionType': {'+': ['2D']},
-
                 },
                 'min_slice_number': 2,
                 'file_extensions': [''],
